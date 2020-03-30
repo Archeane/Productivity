@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <link rel="stylesheet" href="popup.css">
+  <% if (NODE_ENV === 'development') { %>
+  <!-- Load some resources only in development environment -->
+  <% } %>
+</head>
+<body>
+  <div id="app">
+  	<div id=wrapper data-visibility=today>
+        <div class=doughnut-wrapper>
+            <div id=doughnut-today class="doughnut-container sign-today-display"></div>
+            <div id=doughnut-average class="doughnut-container sign-average-display"></div>
+            <div id=doughnut-alltime class="doughnut-container sign-alltime-display"></div>
+        </div>
+        <nav class=chart-types>
+            <ul>
+                <l i class=active><a href=# tabindex=-1 class=sign-today-link data-visibility=today>Today</a></li>
+                <li><a href=# tabindex=-1 class=sign-average-link data-visibility=average>Daily average</a></li>
+                <li><a href=# tabindex=-1 class=sign-alltime-link data-visibility=alltime>All-time</a></li>
+            </ul>
+        </nav>
+        <br>
+        <div class="table-container sign-today-display">
+            <table class=datatable id=table-today data-range=today>
+                <h1 id="total-time"></h1>
+                <canvas id="myChart" width="400" height="400"></canvas>
+            </table>
+        </div>
+        <div class="table-container sign-average-display">
+            <table class=datatable id=table-average data-range=average></table>
+        </div>
+        <div class="table-container sign-alltime-display">
+            <table class=datatable id=table-alltime data-range=alltime></table>
+        </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
+
+
+<!doctype html>
+<html lang=en>
+
+<head>
+    <meta charset=utf-8>
+    <title>Webtime Tracker</title>
+    <link rel=import href=html/templates.html>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" />
+    
+    <!-- <script src='lib/jquery-3.1.0.min.js'></script>
+    <script src="lib/moment-with-locales.js"></script>
+    <script src="lib/Chart.min.js"></script> -->
+    <script src=js/config.js></script>
+    <script src=js/fn.js></script>
+    <script src=js/storage-local.js></script>
+    <script src=data/data.js></script>
+
+</head>
+
+<body>
+    <header>
+        <h1>Webtime Tracker</h1>
+    </header>
+    <div id=wrapper data-visibility=today>
+        <div class=doughnut-wrapper>
+            <div id=doughnut-today class="doughnut-container sign-today-display"></div>
+            <div id=doughnut-average class="doughnut-container sign-average-display"></div>
+            <div id=doughnut-alltime class="doughnut-container sign-alltime-display"></div>
+        </div>
+        <nav class=chart-types>
+            <ul>
+                <l i class=active><a href=# tabindex=-1 class=sign-today-link data-visibility=today>Today</a></li>
+                <li><a href=# tabindex=-1 class=sign-average-link data-visibility=average>Daily average</a></li>
+                <li><a href=# tabindex=-1 class=sign-alltime-link data-visibility=alltime>All-time</a></li>
+            </ul>
+        </nav>
+        <br>
+        <div class="table-container sign-today-display">
+            <table class=datatable id=table-today data-range=today>
+                <h1 id="total-time"></h1>
+                <canvas id="myChart" width="400" height="400"></canvas>
+            </table>
+        </div>
+        <div class="table-container sign-average-display">
+            <table class=datatable id=table-average data-range=average></table>
+        </div>
+        <div class="table-container sign-alltime-display">
+            <table class=datatable id=table-alltime data-range=alltime></table>
+        </div>
+    </div>
+    
+
+        <script src=popup.js></script>
+    
+
+</body>
+
+</html>
