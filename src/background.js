@@ -7,13 +7,48 @@
 
 "use strict";
 
-import getDateString from './js/fn.js';
+import Fn from './js/fn.js';
+import Config from './js/config.js'
+
+var fn = new Fn();
+var config = new Config();
+
+var storageLocal = function() {
+    var r = function(r, t, a) {
+           // console.log(`r:${r}, t: ${t}, a: ${a}`);
+            var e = {};
+            e[r] = JSON.stringify(t);
+            chrome.storage.local.set(e, a);
+            return !0;
+        },
+        /**
+            @params
+                r - what you are loading (ex. domains, date-start, seconds-alltime)
+        **/
+        t = function(r, t, a) {
+            //console.log(`r:${r}, t: ${t}, a: ${a}`);
+            var e = {};
+            e[r] = JSON.stringify(t);
+            chrome.storage.local.get(e, function(t) {
+                var e = {};
+                e[r] = JSON.parse(t[r]);
+                //console.log(`r:${r} e[r]:${e[r]}`);
+                a(e);
+            });
+            return !0;
+        };
+    return {
+        save: r,
+        load: t
+    }
+}();
+
 
 var domains = {},
     blockedSites = {},    //domain : time limite per day, 
     timeTable = {}, // date: [{domain: timeForDomain}...] 
     dates = {
-        today: getDateString(),
+        today: fn.getDateString(),
         start: ""
     },
     seconds = {
@@ -25,10 +60,10 @@ var domains = {},
         save: 0
     },
     settings = {
-        idleTime: IDLE_TIME_DEFAULT,
-        graphGap: GRAPH_GAP_DEFAULT,
-        badgeDisplay: BADGE_DISPLAY_DEFAULT,
-        screenshotInstructionsRead: SCREENSHOT_INSTRUCTIONS_READ_DEFAULT
+        idleTime: config.IDLE_TIME_DEFAULT,
+        graphGap: config.GRAPH_GAP_DEFAULT,
+        badgeDisplay: config.BADGE_DISPLAY_DEFAULT,
+        screenshotInstructionsRead: config.SCREENSHOT_INSTRUCTIONS_READ_DEFAULT
     },
     domainsChanged = !1,
     blockedSitesChanged = !1,
@@ -46,35 +81,35 @@ var domains = {},
     **/
     loadDomains = function(e) {     // returns the STORAGE_DOMAINS object in chrome.localStorage 
         return storageLocal.load(STORAGE_DOMAINS, {}, function(a) {
-            e(a), dcl("Domains loaded: " + Object.keys(domains).length + " domains")
+            e(a), fn.dcl("Domains loaded: " + Object.keys(domains).length + " domains")
         }), !0
     },
     saveDomains = function() {      // saves the domains object in local file to chrome.localStorage
         return storageLocal.save(STORAGE_DOMAINS, domains, function() {
-            domainsChanged = !1, dcl("Domains saved: " + Object.keys(domains).length + " domains")
+            domainsChanged = !1, fn.dcl("Domains saved: " + Object.keys(domains).length + " domains")
         }), !0
     },
     //=====================
     loadBlockedSites = function(cb){
         return storageLocal.load(STORAGE_BLOCKED_SITES, {}, function(blocked_sites){
             cb(blocked_sites);
-            dcl("Blocked Sites loaded: "+ Object.keys(blocked_sites).length + " blocked_sites");
+            fn.dcl("Blocked Sites loaded: "+ Object.keys(blocked_sites).length + " blocked_sites");
             console.log(blocked_sites);
         }), !0
     },
     appendBlockedSites = function(url, limit){
-        var domain = parseDomainFromUrl(url);
+        var domain = fn.parseDomainFromUrl(url);
         blockedSites.hasOwnProperty(domain) || (blockedSites[domain] = getBlockedSiteObj(), blockedSites[domain].name = domain);
         var i = blockedSites[domain];
         i.daylimit.seconds = limit;
     },
     deleteBlockedSites = function(url){
-        return (blockedSites.hasOwnProperty(url) || blockedSites.hasOwnProperty(parseDomainFromUrl(url))) ? blockedSites.delete(url) || blockedSites.delete(parseDomainFromUrl(url)) : "An error occured, please try again later";
+        return (blockedSites.hasOwnProperty(url) || blockedSites.hasOwnProperty(fn.parseDomainFromUrl(url))) ? blockedSites.delete(url) || blockedSites.delete(fn.parseDomainFromUrl(url)) : "An error occured, please try again later";
     },
     saveBlockedSites = function(){
         return storageLocal.save(STORAGE_BLOCKED_SITES, blockedSites, function(){
             blockedSitesChanged = !1;
-            dcl("Blocked Sites saved: "+ Object.keys(blockedSites).length + " blockedSites");
+            fn.dcl("Blocked Sites saved: "+ Object.keys(blockedSites).length + " blockedSites");
             //console.log(blockedSites);
         }), !0
     },
@@ -82,14 +117,14 @@ var domains = {},
     loadTimeTable = function(cb){
         return storageLocal.load(STORAGE_TIME_TABLE, {}, function(timeTable){
             cb(timeTable);
-            dcl("timeTable loaded: "+Object.keys(timeTable).length+" table entries");
+            fn.dcl("timeTable loaded: "+Object.keys(timeTable).length+" table entries");
             console.log(timeTable);
             
         }), !0
     },
     saveTimeTable = function(){
         return storageLocal.save(STORAGE_TIME_TABLE, timeTable, ()=>{
-            dcl("Time table saved: "+ Object.keys(timeTable).length + " table entries");
+            fn.dcl("Time table saved: "+ Object.keys(timeTable).length + " table entries");
             console.log(`timeTable['2020-01-08'].facebook.com: ${timeTable['2020-01-08']['www.facebook.com']}`);
         }), !0
     },
@@ -101,7 +136,7 @@ var domains = {},
     appendToTimeTable = function(date, domainObj){
         if(timeTable.hasOwnProperty(date)){
             if(timeTable[date].hasOwnProperty(domainObj.name)){//.some(e => e.name === domainObj.name)){
-                timeTable[date][domainObj.name] += INTERVAL_UPDATE_S;
+                timeTable[date][domainObj.name] += config.INTERVAL_UPDATE_S;
                 return;
             }
             if(domainObj.days[date].hasOwnProperty(seconds)){
@@ -122,7 +157,7 @@ var domains = {},
     },
     //=====================
     clearAllGeneratedData = function() {
-        return domains = {}, blockedSites = {}, timeTable = {}, saveDomains(), saveBlockedSites(), saveTimeTable(), seconds.today = 0, seconds.alltime = 0, saveSecondsAlltime(), dates.start = dates.today, saveDateStart(), dcl("Clear all generated data: done"), !0
+        return domains = {}, blockedSites = {}, timeTable = {}, saveDomains(), saveBlockedSites(), saveTimeTable(), seconds.today = 0, seconds.alltime = 0, saveSecondsAlltime(), dates.start = dates.today, saveDateStart(), fn.dcl("Clear all generated data: done"), !0
     },
     /*
         loads the start date from chrome.storage.local
@@ -131,7 +166,7 @@ var domains = {},
         return storageLocal.load(STORAGE_DATE_START, e, function(e) {
             dates.start = e[STORAGE_DATE_START];
             saveDateStart();
-            dcl("Start date loaded: " + e[STORAGE_DATE_START]);
+            fn.dcl("Start date loaded: " + e[STORAGE_DATE_START]);
         }), !0
     },
     /*
@@ -139,71 +174,71 @@ var domains = {},
     */
     saveDateStart = function() {
         return storageLocal.save(STORAGE_DATE_START, dates.start, function() {
-            dcl("Start date saved: " + dates.start)
+            fn.dcl("Start date saved: " + dates.start)
         }), !0
     },
     loadSecondsAlltime = function() {
         return storageLocal.load(STORAGE_SECONDS_ALLTIME, 0, function(e) {
-            seconds.alltime = e[STORAGE_SECONDS_ALLTIME], saveSecondsAlltime(), dcl("Seconds alltime loaded: " + e[STORAGE_SECONDS_ALLTIME])
+            seconds.alltime = e[STORAGE_SECONDS_ALLTIME], saveSecondsAlltime(), fn.dcl("Seconds alltime loaded: " + e[STORAGE_SECONDS_ALLTIME])
         }), !0
     },
     saveSecondsAlltime = function() {
         return storageLocal.save(STORAGE_SECONDS_ALLTIME, seconds.alltime, function() {
-            dcl("Seconds alltime saved: " + seconds.alltime)
+            fn.dcl("Seconds alltime saved: " + seconds.alltime)
         }), !0
     },
     loadIdleTime = function() {
-        return storageLocal.load(STORAGE_IDLE_TIME, IDLE_TIME_DEFAULT, function(e) {
-            settings.idleTime = e[STORAGE_IDLE_TIME], saveIdleTime(), dcl("Idle time loaded: " + e[STORAGE_IDLE_TIME])
+        return storageLocal.load(STORAGE_IDLE_TIME, config.IDLE_TIME_DEFAULT, function(e) {
+            settings.idleTime = e[STORAGE_IDLE_TIME], saveIdleTime(), fn.dcl("Idle time loaded: " + e[STORAGE_IDLE_TIME])
         }), !0
     },
     saveIdleTime = function() {
         return storageLocal.save(STORAGE_IDLE_TIME, settings.idleTime, function() {
-            dcl("Idle time saved: " + settings.idleTime)
+            fn.dcl("Idle time saved: " + settings.idleTime)
         }), !0
     },
     setIdleTime = function(e) {
-        return settings.idleTime = parseInt(e) || IDLE_TIME_DEFAULT, !0
+        return settings.idleTime = parseInt(e) || config.IDLE_TIME_DEFAULT, !0
     },
     loadGraphGap = function() {
-        return storageLocal.load(STORAGE_GRAPH_GAP, GRAPH_GAP_DEFAULT, function(e) {
-            settings.graphGap = e[STORAGE_GRAPH_GAP], saveGraphGap(), dcl("Graph gap loaded: " + e[STORAGE_GRAPH_GAP])
+        return storageLocal.load(STORAGE_GRAPH_GAP, config.GRAPH_GAP_DEFAULT, function(e) {
+            settings.graphGap = e[STORAGE_GRAPH_GAP], saveGraphGap(), fn.dcl("Graph gap loaded: " + e[STORAGE_GRAPH_GAP])
         }), !0
     },
     saveGraphGap = function() {
         return storageLocal.save(STORAGE_GRAPH_GAP, settings.graphGap, function() {
-            dcl("Graph gap saved: " + settings.graphGap)
+            fn.dcl("Graph gap saved: " + settings.graphGap)
         }), !0
     },
     setGraphGap = function(e) {
         var a = parseFloat(e);
-        return settings.graphGap = isFinite(a) ? a : GRAPH_GAP_DEFAULT, !0
+        return settings.graphGap = isFinite(a) ? a : config.GRAPH_GAP_DEFAULT, !0
     },
     loadBadgeDisplay = function() {
-        return storageLocal.load(STORAGE_BADGE_DISPLAY, BADGE_DISPLAY_DEFAULT, function(e) {
-            settings.badgeDisplay = e[STORAGE_BADGE_DISPLAY], saveBadgeDisplay(), dcl("Badge display loaded: " + e[STORAGE_BADGE_DISPLAY])
+        return storageLocal.load(STORAGE_BADGE_DISPLAY, config.BADGE_DISPLAY_DEFAULT, function(e) {
+            settings.badgeDisplay = e[STORAGE_BADGE_DISPLAY], saveBadgeDisplay(), fn.dcl("Badge display loaded: " + e[STORAGE_BADGE_DISPLAY])
         }), !0
     },
     saveBadgeDisplay = function() {
         return storageLocal.save(STORAGE_BADGE_DISPLAY, settings.badgeDisplay, function() {
-            dcl("Badge display saved: " + settings.badgeDisplay)
+            fn.dcl("Badge display saved: " + settings.badgeDisplay)
         }), !0
     },
     setBadgeDisplay = function(e) {
-        return settings.badgeDisplay = "boolean" == typeof e ? e : BADGE_DISPLAY_DEFAULT, !0
+        return settings.badgeDisplay = "boolean" == typeof e ? e : config.BADGE_DISPLAY_DEFAULT, !0
     },
     loadScreenshotInstructionsRead = function() {
-        return storageLocal.load(STORAGE_SCREENSHOT_INSTRUCTIONS_READ, SCREENSHOT_INSTRUCTIONS_READ_DEFAULT, function(e) {
-            settings.screenshotInstructionsRead = e[STORAGE_SCREENSHOT_INSTRUCTIONS_READ], saveScreenshotInstructionsRead(), dcl("Storage instructions set loaded: " + e[STORAGE_SCREENSHOT_INSTRUCTIONS_READ])
+        return storageLocal.load(STORAGE_SCREENSHOT_INSTRUCTIONS_READ, config.SCREENSHOT_INSTRUCTIONS_READ_DEFAULT, function(e) {
+            settings.screenshotInstructionsRead = e[STORAGE_SCREENSHOT_INSTRUCTIONS_READ], saveScreenshotInstructionsRead(), fn.dcl("Storage instructions set loaded: " + e[STORAGE_SCREENSHOT_INSTRUCTIONS_READ])
         }), !0
     },
     saveScreenshotInstructionsRead = function() {
         return storageLocal.save(STORAGE_SCREENSHOT_INSTRUCTIONS_READ, settings.screenshotInstructionsRead, function() {
-            dcl("Storage instructions set saved: " + settings.screenshotInstructionsRead)
+            fn.dcl("Storage instructions set saved: " + settings.screenshotInstructionsRead)
         }), !0
     },
     setScreenshotInstructionsRead = function(e) {
-        return settings.screenshotInstructionsRead = "boolean" == typeof e ? e : SCREENSHOT_INSTRUCTIONS_READ_DEFAULT, !0
+        return settings.screenshotInstructionsRead = "boolean" == typeof e ? e : config.SCREENSHOT_INSTRUCTIONS_READ_DEFAULT, !0
     },
     setBadge = function(e, a) {
         return settings.badgeDisplay || (a = ""), chrome.browserAction.setBadgeText({
@@ -216,7 +251,7 @@ var domains = {},
     
     //============
     updateDomains = function(e) {   // updates the domain object in file
-        var a, t, s, n = getDateString();
+        var a, t, s, n = fn.getDateString();
         dates.today !== n && (dates.today = n, seconds.today = 0), chrome.windows.getLastFocused({
             populate: !0
         }, function(n) {    // n = most recently focused window
@@ -228,12 +263,12 @@ var domains = {},
             chrome.idle.queryState(settings.idleTime, function(o) { // o = newstate
                 var d = (n.id, n.focused, s.id);
                 s.url;
-                if (a = parseDomainFromUrl(s.url), t = parseProtocolFromUrl(s.url), (n.focused && "active" === o || e) && -1 === BLACKLIST_DOMAIN.indexOf(a) && -1 === BLACKLIST_PROTOCOL.indexOf(t) && "" !== a) {
-                    dcl("LOG (" + dates.today + "): " + a), domains.hasOwnProperty(a) || (domains[a] = getDomainObj(), domains[a].name = a);
+                if (a = fn.parseDomainFromUrl(s.url), t = fn.parseProtocolFromUrl(s.url), (n.focused && "active" === o || e) && -1 === config.BLACKLIST_DOMAIN.indexOf(a) && -1 === config.BLACKLIST_PROTOCOL.indexOf(t) && "" !== a) {
+                    fn.dcl("LOG (" + dates.today + "): " + a), domains.hasOwnProperty(a) || (domains[a] = fn.getDomainObj(), domains[a].name = a);
                     var i = domains[a];
                    
 
-                    i.days[dates.today] = i.days[dates.today] || getDayObj(), e || (i.alltime.seconds += INTERVAL_UPDATE_S, i.days[dates.today].seconds += INTERVAL_UPDATE_S, seconds.today += INTERVAL_UPDATE_S, seconds.alltime += INTERVAL_UPDATE_S, domainsChanged = !0), setBadge(d, getBadgeTimeString(i.days[dates.today].seconds));
+                    i.days[dates.today] = i.days[dates.today] || fn.getDayObj(), e || (i.alltime.seconds += config.INTERVAL_UPDATE_S, i.days[dates.today].seconds += config.INTERVAL_UPDATE_S, seconds.today += config.INTERVAL_UPDATE_S, seconds.alltime += config.INTERVAL_UPDATE_S, domainsChanged = !0), setBadge(d, fn.getBadgeTimeString(i.days[dates.today].seconds));
                     //console.log(`today's time on ${a} is ${i.days[dates.today].seconds}s, limit: ${blockedSites.hasOwnProperty(a) && blockedSites[a].daylimit.seconds}`);
                     
                      //add to timetable
@@ -267,12 +302,12 @@ chrome.tabs.onActivated.addListener(function(e) {
     var a, t = e.tabId;
     //console.log(`a:: ${a}, t: ${t}`);
     return chrome.tabs.get(t, function(e) {
-        //a = parseDomainFromUrl(e.url), setBadge(t, ""), domains[a] && domains[a].days[dates.today] && setBadge(t, getBadgeTimeString(domains[a].days[dates.today].seconds))
-        a = parseDomainFromUrl(e.url);
+        //a = fn.parseDomainFromUrl(e.url), setBadge(t, ""), domains[a] && domains[a].days[dates.today] && setBadge(t, getBadgeTimeString(domains[a].days[dates.today].seconds))
+        a = fn.parseDomainFromUrl(e.url);
         //console.log(`a:${a}, domains[a]:${domains[a]}: ${domains[a].days[dates.today].seconds}`);
     }), !0
 })
-dcl("Webtime Tracker - background.js loaded");
+fn.dcl("Webtime Tracker - background.js loaded");
 loadDateStart(dates.today);
 loadSecondsAlltime();
 loadIdleTime();
@@ -282,8 +317,8 @@ loadScreenshotInstructionsRead();
 loadDomains(function(e) {   // e = callback from storageLocal, sets domains in current file to e
     //console.log(e);
     console.log(e[STORAGE_DOMAINS]);
-    console.log([], seconds.today = getTotalSecondsForDate(domains, getDateString()));
-    return domains = e[STORAGE_DOMAINS] || [], seconds.today = getTotalSecondsForDate(domains, getDateString()), !0
+    console.log([], seconds.today = fn.getTotalSecondsForDate(domains, fn.getDateString()));
+    return domains = e[STORAGE_DOMAINS] || [], seconds.today = fn.getTotalSecondsForDate(domains, fn.getDateString()), !0
 });
 loadBlockedSites(function(e) {
     blockedSites = e[STORAGE_BLOCKED_SITES];
@@ -301,13 +336,13 @@ chrome.webRequest.onBeforeRequest.addListener(
 //saveBlockSites();
 timeIntervals.update = window.setInterval(function() {
     updateDomains()
-}, INTERVAL_UPDATE_MS)
+}, config.INTERVAL_UPDATE_MS)
 timeIntervals.save = window.setInterval(function() {
     
-    domainsChanged && (saveDomains(), saveBlockSites(), saveTimeTable(), saveSecondsAlltime(), chrome.storage.local.getBytesInUse(null, function(e) {
-        dcl("Total storage used: " + e + " B")
+    domainsChanged && (saveDomains(), saveBlockedSites(), saveTimeTable(), saveSecondsAlltime(), chrome.storage.local.getBytesInUse(null, function(e) {
+        fn.dcl("Total storage used: " + e + " B")
     }))
-}, INTERVAL_SAVE_MS);
+}, config.INTERVAL_SAVE_MS);
 
 
 // //check if current url is contained in blocked_sites
