@@ -6,31 +6,10 @@
 </template>
 
 <script>
-import VueChartJS from './VueChartJS.vue';
-
-var chartdata = {
-  labels: ['January', 'February'],
-  datasets: [
-    {
-      label: 'Data One',
-      backgroundColor: '#f87979',
-      data: [40, 20],
-    },
-  ],
-};
-var options = {
-  responsive: true,
-  maintainAspectRatio: false,
-};
+import VueChartJS from './charts/VueChartJS.vue';
 
 export default {
   name: 'app',
-  data: function() {
-    return {
-      chartdata: chartdata,
-      options: options,
-    };
-  },
   components: {
     VueChartJS,
   },

@@ -145,7 +145,7 @@ export class ChartData {
   monthChartTotalTime() {}
 }
 
-export function getTimeTable(cb) {
+export async function getTimeTable(cb) {
   chrome.runtime.sendMessage({ request: 'getTimeTable' }, function(response) {
     cb(response.done);
   });
