@@ -142,6 +142,7 @@ var domains = {},
     return (
       storageLocal.save(STORAGE_TIME_TABLE, timeTable, () => {
         fn.dcl('Time table saved: ' + Object.keys(timeTable).length + ' table entries');
+        console.log(`timeTable['2020-01-08'].facebook.com: ${timeTable['2020-01-08']['www.facebook.com']}`);
       }),
       !0
     );
@@ -149,22 +150,23 @@ var domains = {},
   clearTimeTable = () => {
     return (timeTable = {}), saveTimeTable(), !0;
   },
-  updateTimeTable = function(date, domainObj) {
+  appendToTimeTable = function(date, domainObj) {
     if (timeTable.hasOwnProperty(date)) {
       if (timeTable[date].hasOwnProperty(domainObj.name)) {
         //.some(e => e.name === domainObj.name)){
         timeTable[date][domainObj.name] += config.INTERVAL_UPDATE_S;
         return;
       }
-      if (domainObj.days[date].hasOwnProperty('seconds')) {
+      if (domainObj.days[date].hasOwnProperty(seconds)) {
         return (timeTable[date][domainObj.name] = domainObj.days[date].seconds);
       } else {
+        console.log(domainObj.days[date]);
         return (timeTable[date][domainObj.name] = 0);
       }
     } else {
       timeTable[date] = {};
       //var timeTableObj = getTimeTableObj(domainObj, date);
-      if (domainObj && domainObj.hasOwnProperty(days) && domainObj[days].hasOwnProperty(date) && domainObj[days][date].hasOwnProperty('seconds')) {
+      if (domainObj && domainObj.hasOwnProperty(days) && domainObj[days].hasOwnProperty(date) && domainObj[days][date].hasOwnProperty(seconds)) {
         return (timeTable[date][domainObj.name] = domainObj.days[date].seconds);
       } else {
         return (timeTable[date][domainObj.name] = null);
@@ -363,7 +365,7 @@ var domains = {},
               //console.log(`today's time on ${a} is ${i.days[dates.today].seconds}s, limit: ${blockedSites.hasOwnProperty(a) && blockedSites[a].daylimit.seconds}`);
 
               //add to timetable
-              updateTimeTable(dates.today, domains[a]);
+              appendToTimeTable(dates.today, domains[a]);
               //console.log(timeTable);
 
               //check if today's time exceeds limit
@@ -408,8 +410,9 @@ loadBadgeDisplay();
 loadScreenshotInstructionsRead();
 loadDomains(function(e) {
   // e = callback from storageLocal, sets domains in current file to e
+  //console.log(e);
   console.log(e[STORAGE_DOMAINS]);
-  // console.log([], seconds.today = fn.getTotalSecondsForDate(domains, fn.getDateString()));
+  console.log([], (seconds.today = fn.getTotalSecondsForDate(domains, fn.getDateString())));
   return (domains = e[STORAGE_DOMAINS] || []), (seconds.today = fn.getTotalSecondsForDate(domains, fn.getDateString())), !0;
 });
 loadBlockedSites(function(e) {

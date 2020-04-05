@@ -10,16 +10,17 @@ const config = {
   mode: process.env.NODE_ENV,
   context: __dirname + '/src',
   entry: {
-    'background': ['./js/fn.js','./background.js'],
+    background: ['./js/fn.js', './background.js'],
     'popup/popup': './popup/popup.js',
     'options/options': './options/options.js',
-    'content_script': './content.js',
+    content_script: './content.js',
   },
   output: {
     path: __dirname + '/dist',
     filename: '[name].js',
   },
   resolve: {
+    alias: { vue: 'vue/dist/vue.esm.js' },
     extensions: ['.js', '.vue'],
   },
   module: {
@@ -80,7 +81,7 @@ const config = {
       {
         from: 'manifest.json',
         to: 'manifest.json',
-        transform: (content) => {
+        transform: content => {
           const jsonContent = JSON.parse(content);
           jsonContent.version = version;
 
