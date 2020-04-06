@@ -151,24 +151,39 @@ var domains = {},
   },
   updateTimeTable = function(date, domainObj) {
     if (timeTable.hasOwnProperty(date)) {
-      if (timeTable[date].hasOwnProperty(domainObj.name)) {
-        //.some(e => e.name === domainObj.name)){
-        timeTable[date][domainObj.name] += config.INTERVAL_UPDATE_S;
-        return;
+      if (!timeTable[date].hasOwnProperty(domainObj.name)) {
+        timeTable[date][domainObj.name] = {};
       }
       if (domainObj.days[date].hasOwnProperty('seconds')) {
-        return (timeTable[date][domainObj.name] = domainObj.days[date].seconds);
+        return (timeTable[date][domainObj.name]['total'] += config.INTERVAL_UPDATE_S);
       } else {
-        return (timeTable[date][domainObj.name] = 0);
+        return (timeTable[date][domainObj.name]['total'] = 0);
       }
     } else {
       timeTable[date] = {};
-      //var timeTableObj = getTimeTableObj(domainObj, date);
-      if (domainObj && domainObj.hasOwnProperty(days) && domainObj[days].hasOwnProperty(date) && domainObj[days][date].hasOwnProperty('seconds')) {
-        return (timeTable[date][domainObj.name] = domainObj.days[date].seconds);
+      if (domainObj && domainObj.hasOwnProperty('days') && domainObj[days].hasOwnProperty('date') && domainObj[days][date].hasOwnProperty('seconds')) {
+        return (timeTable[date][domainObj.name]['total'] = domainObj.days[date].seconds);
       } else {
         return (timeTable[date][domainObj.name] = null);
       }
+    }
+  },
+  updateTimeTableOccurance = function(date, url) {
+    var formatted_url = fn.parseDomainFromUrl(url);
+    console.log(`formatted url: ${formatted_url}`);
+    if (timeTable.hasOwnProperty(date)) {
+      if (!timeTable[date].hasOwnProperty(formatted_url)) {
+        timeTable[date][domainObj.name] = {};
+      }
+      if (timeTable[date][formatted_url].hasOwnProperty('visits')) {
+        return timeTable[date][formatted_url]['visits'].push(Date.now());
+      } else {
+        return (timeTable[date][formatted_url]['visits'] = [Date.now()]);
+      }
+    } else {
+      timeTable[date] = {};
+      timeTable[date][formatted_url] = {};
+      return (timeTable[date][formatted_url]['visits'] = [Date.now()]);
     }
   },
   //=====================
@@ -389,15 +404,30 @@ var domains = {},
 chrome.tabs.onActivated.addListener(function(e) {
   var a,
     t = e.tabId;
-  //console.log(`a:: ${a}, t: ${t}`);
   return (
     chrome.tabs.get(t, function(e) {
       //a = fn.parseDomainFromUrl(e.url), setBadge(t, ""), domains[a] && domains[a].days[dates.today] && setBadge(t, getBadgeTimeString(domains[a].days[dates.today].seconds))
+      updateTimeTableOccurance(dates.today, e.url);
       a = fn.parseDomainFromUrl(e.url);
-      //console.log(`a:${a}, domains[a]:${domains[a]}: ${domains[a].days[dates.today].seconds}`);
+      console.log(timeTable[dates.today][a]['visits']);
     }),
     !0
   );
+});
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
+  if (changeInfo.status == 'complete') {
+    console.log(changeInfo);
+    return (
+      chrome.tabs.get(tabId, function(tab) {
+        if (!tab.url.includes('chrome://newtab')) {
+          updateTimeTableOccurance(dates.today, tab.url);
+          var a = fn.parseDomainFromUrl(tab.url);
+          console.log(timeTable[dates.today][a]['visits']);
+        }
+      }),
+      !0
+    );
+  }
 });
 fn.dcl('Webtime Tracker - background.js loaded');
 loadDateStart(dates.today);

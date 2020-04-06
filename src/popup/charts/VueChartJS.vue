@@ -1,17 +1,13 @@
 <template>
   <section class="container">
-    <h1>Demo examples of vue-chartjs</h1>
-    <div class="columns">
-      <div class="column">
-        <h3>Line Chart</h3>
-        <line-chart v-if="loaded" :chartdata="chartData" :options="chartOptions" />
-      </div>
-    </div>
+    <line-chart v-if="loaded" :chartdata="chartData" :options="chartOptions" />
+    <pie-chart v-if="loaded" :chartdata="chartData" />
   </section>
 </template>
 
 <script>
 import LineChart from './LineChart';
+import PieChart from './PieChart';
 import { ChartData, getTimeTable } from '../../js/data.js';
 
 let chartDataProcessor = new ChartData();
@@ -53,12 +49,11 @@ export default {
     this.loaded = false;
     getTimeTable(response => {
       var data = chartDataProcessor.dayChartPieData(null, response);
-      console.log(data);
       this.chartData = data;
       this.loaded = true;
       console.log(this.chartData);
     });
   },
-  components: { LineChart },
+  components: { LineChart, PieChart },
 };
 </script>

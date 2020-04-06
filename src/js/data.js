@@ -119,6 +119,7 @@ class TimeTable {
 const timeTableFunctions = new TimeTable();
 
 export class ChartData {
+  colors(data) {} // return same number of colors as number of items in data passed in
   dayChartPieData(date, timeTable) {
     if (timeTable == null) {
       return;
@@ -143,6 +144,10 @@ export class ChartData {
   monthChartSite() {}
   weekChartTotalTime() {}
   monthChartTotalTime() {}
+  siteWeekTime() {}
+  siteMonthTime() {}
+  sitesWeekTime() {}
+  sitesMonthTime() {}
 }
 
 export async function getTimeTable(cb) {
