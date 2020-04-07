@@ -1,7 +1,8 @@
 <template>
   <section class="container">
     <line-chart v-if="loaded" :chartdata="LineChartData" />
-    <pie-chart v-if="loaded" :chartdata="PieChartData" />
+    <pie-chart v-if="loaded" :chartdata="PieChartDayData" />
+    <pie-chart v-if="loaded" :chartdata="PieChartWeekData" />
   </section>
 </template>
 
@@ -42,27 +43,15 @@ export default {
   name: 'VueChartJS',
   data: () => ({
     loaded: false,
-    PieChartData: null,
+    PieChartDayData: null,
+    PieChartWeekData: null,
     LineChartData: null,
   }),
   async mounted() {
     this.loaded = false;
     getTimeTable(response => {
-      var data = chartDataProcessor.dayChartPieData(null, response);
-      this.PieChartData = data;
-      var data_array = chartDataProcessor.siteWeekTime(new Date(), 'www.google.com', response);
-      console.log(data_array);
-      this.LineChartData = {
-        labels: ['mon', 'tue'],
-        datasets: [
-          {
-            data: data_array,
-            label: 'www.google.com',
-            borderColor: '#3e95cd',
-            fill: false,
-          },
-        ],
-      };
+      this.PieChartDayData = chartDataProcessor.dayChartPieData(null, response);
+      this.LineChartData = chartDataProcessor.weekTopNSitesLineChartData(new Date(), 5, response);
       this.loaded = true;
     });
   },

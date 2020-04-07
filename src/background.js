@@ -150,37 +150,37 @@ var domains = {},
     return (timeTable = {}), saveTimeTable(), !0;
   },
   updateTimeTable = function(date, domainObj) {
-    if (timeTable.hasOwnProperty(date)) {
-      if (!timeTable[date].hasOwnProperty(domainObj.name)) {
-        timeTable[date][domainObj.name] = {};
-      }
-      if (domainObj.days[date].hasOwnProperty('seconds')) {
-        let a = timeTable[date][domainObj.name];
-        a['total'] += config.INTERVAL_UPDATE_S;
-        // update visiting period
-        if (a.hasOwnProperty('visits')) {
-          //check if current time is within tick frame of last visiting period's last active time
-          a['lastActive'] = new Date().getTime();
-          let lastActiveTime = a['visits'].slice(-1)[0][1];
-          if (a['lastActive'] - lastActiveTime <= 30000) {
-            // just update the last visiting interval
-            a['visits'].slice(-1)[0][1] = a['lastActive'];
+    try {
+      if (timeTable.hasOwnProperty(date)) {
+        if (!timeTable[date].hasOwnProperty(domainObj.name)) {
+          timeTable[date][domainObj.name] = { total: domainObj['days'][date]['seconds'] };
+        }
+        if (domainObj['days'][date].hasOwnProperty('seconds')) {
+          let a = timeTable[date][domainObj.name];
+          a['total'] += domainObj['days'][date]['seconds'];
+          // update visiting period
+          if (a.hasOwnProperty('visits')) {
+            //check if current time is within tick frame of last visiting period's last active time
+            a['lastActive'] = new Date().getTime();
+            let lastActiveTime = a['visits'].slice(-1)[0][1];
+            if (a['lastActive'] - lastActiveTime <= 30000) {
+              // just update the last visiting interval
+              a['visits'].slice(-1)[0][1] = a['lastActive'];
+            } else {
+              // push a new interval
+              a['visits'].push([a['lastActive'], a['lastActive']]);
+            }
           } else {
-            // push a new interval
-            a['visits'].push([a['lastActive'], a['lastActive']]);
+            a['lastActive'] = new Date().getTime();
+            a['visits'] = [a['lastActive'], a['lastActive']];
           }
-        } else {
-          a['lastActive'] = new Date().getTime();
-          a['visits'] = [a['lastActive'], a['lastActive']];
         }
       } else {
-        return (timeTable[date][domainObj.name]['total'] = 0);
+        timeTable[date] = {};
+        timeTable[date][domainObj.name] = { total: domainObj['days'][date]['seconds'] };
       }
-    } else {
-      timeTable[date] = {};
-      if (domainObj && domainObj.hasOwnProperty('days') && domainObj['days'].hasOwnProperty(date) && domainObj['days'][date].hasOwnProperty('seconds')) {
-        return (timeTable[date][domainObj.name]['total'] = domainObj.days[date].seconds);
-      }
+    } catch (err) {
+      console.log('updateTimeTable Error ', err);
     }
   },
   //=====================
@@ -372,96 +372,11 @@ var domains = {},
                 (seconds.alltime += config.INTERVAL_UPDATE_S),
                 (domainsChanged = !0)),
               setBadge(d, fn.getBadgeTimeString(i.days[dates.today].seconds));
-            //console.log(`today's time on ${a} is ${i.days[dates.today].seconds}s, limit: ${blockedSites.hasOwnProperty(a) && blockedSites[a].daylimit.seconds}`);
-
-            //add to timetable
             updateTimeTable(dates.today, domains[a]);
           }
         });
       });
-    /*
-      chrome.windows.getLastFocused( {populate: !0,}, function(n) {
-          // n = most recently focused window
-          for (var o in n.tabs)
-            if (n.tabs.hasOwnProperty(o) && n.tabs[o].active === !0) {
-              //find the active tab
-              s = n.tabs[o]; // s = the active tab
-              break;
-            }
-          chrome.idle.queryState(settings.idleTime, function(o) {
-            // o = newstate
-            var d = (n.id, n.focused, s.id);
-            s.url;
-            if (
-              ((a = fn.parseDomainFromUrl(s.url)),
-              (t = fn.parseProtocolFromUrl(s.url)),
-              ((n.focused && 'active' === o) || e) && -1 === config.BLACKLIST_DOMAIN.indexOf(a) && -1 === config.BLACKLIST_PROTOCOL.indexOf(t) && '' !== a)
-            ) {
-              fn.dcl('LOG (' + dates.today + '): ' + a), domains.hasOwnProperty(a) || ((domains[a] = fn.getDomainObj()), (domains[a].name = a));
-              var i = domains[a];
-
-              (i.days[dates.today] = i.days[dates.today] || fn.getDayObj()),
-                e ||
-                  ((i.alltime.seconds += config.INTERVAL_UPDATE_S),
-                  (i.days[dates.today].seconds += config.INTERVAL_UPDATE_S),
-                  (seconds.today += config.INTERVAL_UPDATE_S),
-                  (seconds.alltime += config.INTERVAL_UPDATE_S),
-                  (domainsChanged = !0)),
-                setBadge(d, fn.getBadgeTimeString(i.days[dates.today].seconds));
-              //console.log(`today's time on ${a} is ${i.days[dates.today].seconds}s, limit: ${blockedSites.hasOwnProperty(a) && blockedSites[a].daylimit.seconds}`);
-
-              //add to timetable
-              updateTimeTable(dates.today, domains[a]);
-              //console.log(timeTable[dates.today][domains[a].name]['visits'].slice(-1)[0], timeTable[dates.today][domains[a].name]['lastActive']);
-
-              //check if today's time exceeds limit
-              if (blockedSites.hasOwnProperty(a) && i.days[dates.today].seconds > blockedSites[a].daylimit.seconds) {
-                console.log('time limit excced!');
-                var pattern = '*://' + a + '/*';
-                var redirectUrl = 'https://38.media.tumblr.com/tumblr_ldbj01lZiP1qe0eclo1_500.gif';
-                function redirectAsync(requestDetails) {
-                  console.log('Redirecting async: ' + requestDetails.url);
-                  return new Promise((resolve, reject) => {
-                    window.setTimeout(() => {
-                      resolve({ redirectUrl });
-                    }, 2000);
-                  });
-                }
-                chrome.webRequest.onBeforeRequest.addListener(redirectAsync, { urls: [pattern] }, ['blocking']);
-              }
-            }
-          });
-        }
-      );*/
   };
-/* chrome.tabs.onActivated.addListener(function(e) {
-    var a,
-      t = e.tabId;
-    return (
-      chrome.tabs.get(t, function(e) {
-        //a = fn.parseDomainFromUrl(e.url), setBadge(t, ""), domains[a] && domains[a].days[dates.today] && setBadge(t, getBadgeTimeString(domains[a].days[dates.today].seconds))
-        updateTimeTableOccurance(dates.today, e.url);
-        a = fn.parseDomainFromUrl(e.url);
-        console.log(timeTable[dates.today][a]['visits']);
-      }),
-      !0
-    );
-  });
-  chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
-    if (changeInfo.status == 'complete') {
-      console.log(changeInfo);
-      return (
-        chrome.tabs.get(tabId, function(tab) {
-          if (!tab.url.includes('chrome://newtab')) {
-            updateTimeTableOccurance(dates.today, tab.url);
-            var a = fn.parseDomainFromUrl(tab.url);
-            console.log(timeTable[dates.today][a]['visits']);
-          }
-        }),
-        !0
-      );
-    }
-  });*/
 fn.dcl('Webtime Tracker - background.js loaded');
 loadDateStart(dates.today);
 loadSecondsAlltime();

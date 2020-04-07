@@ -11,80 +11,6 @@ function UserException(message) {
   this.name = 'UserException';
 }
 
-export class AllBlockSite {
-  constructor() {
-    this.AllBlockSite = {};
-  }
-
-  addBlockSite(site, siteTimeLimit) {
-    var blockSite = new BlockSite(site, siteTimeLimit);
-    AllBlockSite[blockSite.url] = blockSite;
-  }
-
-  isBlockSite(url) {
-    return this.AllBlockSite.hasOwnProperty(urlFormatter(url));
-  }
-
-  siteReachedLimit(url, siteTime) {
-    if (!isBlockSite(url)) {
-      return false;
-    }
-    var formattedUrl = urlFormatter(url);
-    if (isWorkday(new Date()) && this.AllBlockSite[formattedUrl].hasWorkDayLimit() && this.AllBlockSite[formattedUrl].workdayLimitReached(siteTime)) {
-      return true;
-    }
-    if (this.AllBlockSite[formattedUrl].hasWeekLimit() && this.AllBlockSite[formattedUrl].weekLimitReached(siteTime)) {
-      return true;
-    }
-    if (this.AllBlockSite[formattedUrl].dayLimitReached(siteTime)) {
-      return true;
-    }
-    return false;
-  }
-}
-
-class BlockSite {
-  constructor(site, dayLimit, weekLimit = null, workdayLimit = null) {
-    this.url = urlFormatter(site);
-    this.dayLimit = dayLimit;
-    this.weekLimit = weekLimit;
-    this.workdayLimit = workdayLimit;
-    this.blockedOccurance = 0; // number of times the site is blocked
-  }
-
-  hasWorkDayLimit() {
-    return this.workdayLimit != null;
-  }
-
-  workdayLimitReached(time) {
-    if (time >= this.workdayLimit) {
-      this.blockedOccurance++;
-      return true;
-    }
-    return false;
-  }
-
-  hasWeekLimit() {
-    return this.weekLimit != null;
-  }
-
-  weekLimitReached(time) {
-    if (time >= this.weekLimit) {
-      this.blockedOccurance++;
-      return true;
-    }
-    return false;
-  }
-
-  dayLimitReached(time) {
-    if (time >= this.dayLimit) {
-      this.blockedOccurance++;
-      return true;
-    }
-    return false;
-  }
-}
-
 class TimeTable {
   // get usage total per time unit
   // @return {url: time}
@@ -92,10 +18,16 @@ class TimeTable {
     return timeTable[fn.getDateString(day)];
   }
 
-  getWeekUsage(week) {
-    week = [];
-    for (day in week) week.push(this.timeTable[day]);
-    return week;
+  getWeekUsage(week, timeTable) {
+    weekUsage = [];
+    week.forEach(day => {
+      if (timeTable.hasOwnProperty(day)) {
+        weekUsage.push(timeTable[day]);
+      } else {
+        weekUsage.push(null);
+      }
+    });
+    return weekUsage;
   }
 
   getMonthUsage(month) {
@@ -114,6 +46,42 @@ class TimeTable {
   }
 
   getSiteMonthUsage(site, month) {}
+
+  /**
+   *
+   * @param {number} n
+   * @param {Array} timeFrame
+   * @param {Object} timeTable
+   */
+  getTopNSites(n, timeFrame, timeTable) {
+    if (timeFrame.length == 1) {
+      return Object.keys(timeTable[day])
+        .sort((a, b) => {
+          return timeTable[day][b]['total'] - timeTable[day][a]['total'];
+        })
+        .slice(0, n);
+    }
+    var timeFrameUsage = {}; // url: total usage this week
+    timeFrame.forEach(day => {
+      if (timeTable.hasOwnProperty(day)) {
+        for (let [url, usage] of Object.entries(timeTable[day])) {
+          if (typeof usage['total'] !== 'number') {
+            continue;
+          }
+          if (timeFrameUsage.hasOwnProperty(url)) {
+            timeFrameUsage[url] += usage['total'];
+          } else {
+            timeFrameUsage[url] = usage['total'];
+          }
+        }
+      }
+    });
+    return Object.keys(timeFrameUsage)
+      .sort((a, b) => {
+        return timeFrameUsage[b] - timeFrameUsage[a];
+      })
+      .slice(0, n);
+  }
 }
 
 const timeTableFunctions = new TimeTable();
@@ -210,14 +178,64 @@ export class ChartData {
       ],
     };
   }
-  weekChartPieData() {}
+  weekChartPieData(date, timeTable) {
+    if (timeTable == null) {
+      return;
+    }
+    const week = this.getWeek(date);
+    const usage = timeTableFunctions.getWeekUsage(week, timeTable);
+    let data = [];
+    let labels = [];
+    for (let [url, usage] of Object.entries(usage)) {
+      if (typeof url === 'string' && usage.hasOwnProperty('total') && typeof usage['total'] === 'number') {
+        labels.push(url);
+        data.push(usage['total']);
+      }
+    }
+    let color = this.colors(data.length);
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "This Week's usage",
+          backgroundColor: color,
+          data: data,
+        },
+      ],
+    };
+  }
   monthChartPieData() {}
-  weekSitesLineChartData() {}
+
+  /**
+   *
+   * @param {Date} date
+   * @param {number} n
+   * @param {Object} timeTable
+   * @returns {LineChartDataObject} {labels: Array, datasets: Array[Objects]}
+   */
+  weekTopNSitesLineChartData(date, n, timeTable) {
+    var sitesUsage = {}; // url: [mon_usage, tues_usage ...]
+    const week = this.getWeek(date);
+    const topNSites = timeTableFunctions.getTopNSites(n, week, timeTable);
+    topNSites.forEach(site => {
+      sitesUsage[site] = this.siteWeekTime(week, site, timeTable);
+    });
+    var datasets = [];
+    for (let [url, time_arr] of Object.entries(sitesUsage)) datasets.push({ data: time_arr, label: url, fill: false });
+    const colors = this.colors(n);
+    datasets.forEach(dataset => {
+      dataset['borderColor'] = colors.pop();
+    });
+    return {
+      labels: ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'],
+      datasets: datasets,
+    };
+  }
   monthSitesLineChartData() {}
   weekTotalTimeLineChart() {}
   monthTotalTimeLineChart() {}
-  siteWeekTime(date, url, timeTable) {
-    var week = this.getWeek(date);
+
+  siteWeekTime(week, url, timeTable) {
     let data = [];
     week.forEach(day => {
       if (timeTable.hasOwnProperty(day) && timeTable[day].hasOwnProperty(url) && timeTable[day][url].hasOwnProperty('total') && typeof timeTable[day][url]['total'] === 'number') {
@@ -229,12 +247,15 @@ export class ChartData {
     return data;
   }
   siteMonthTime() {}
-  sitesWeekTime() {}
-  sitesMonthTime() {}
 }
 
 export async function getTimeTable(cb) {
-  chrome.runtime.sendMessage({ request: 'getTimeTable' }, function(response) {
-    cb(response.done);
-  });
+  chrome.runtime.sendMessage(
+    {
+      request: 'getTimeTable',
+    },
+    function(response) {
+      cb(response.done);
+    }
+  );
 }
