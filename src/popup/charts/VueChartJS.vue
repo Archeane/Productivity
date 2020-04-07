@@ -1,7 +1,7 @@
 <template>
   <section class="container">
-    <line-chart v-if="loaded" :chartdata="chartData" :options="chartOptions" />
-    <pie-chart v-if="loaded" :chartdata="chartData" />
+    <line-chart v-if="loaded" :chartdata="LineChartData" />
+    <pie-chart v-if="loaded" :chartdata="PieChartData" />
   </section>
 </template>
 
@@ -42,16 +42,28 @@ export default {
   name: 'VueChartJS',
   data: () => ({
     loaded: false,
-    chartData: null,
-    chartOptions: options,
+    PieChartData: null,
+    LineChartData: null,
   }),
   async mounted() {
     this.loaded = false;
     getTimeTable(response => {
       var data = chartDataProcessor.dayChartPieData(null, response);
-      this.chartData = data;
+      this.PieChartData = data;
+      var data_array = chartDataProcessor.weekSiteDataArray(new Date(), 'www.google.com', response);
+      console.log(data_array);
+      this.LineChartData = {
+        labels: ['mon', 'tue'],
+        datasets: [
+          {
+            data: data_array,
+            label: 'www.google.com',
+            borderColor: '#3e95cd',
+            fill: false,
+          },
+        ],
+      };
       this.loaded = true;
-      console.log(this.chartData);
     });
   },
   components: { LineChart, PieChart },

@@ -119,7 +119,72 @@ class TimeTable {
 const timeTableFunctions = new TimeTable();
 
 export class ChartData {
-  colors(data) {} // return same number of colors as number of items in data passed in
+  colors(num_of_colors) {
+    var color_palette = [
+      '#18e6cf',
+      '#dcedc1',
+      '#ffd3b6',
+      '##bada55',
+      '#7fe5f0',
+      '#c0c0c0',
+      '#5ac18e',
+      '#e6e6fa',
+      '#ffd700',
+      '#ffc0cb',
+      '#ff7373',
+      '#b0e0e6',
+      '#f0f8ff',
+      '#d3ffce',
+      '#ffa500',
+      '#ffb6c1',
+      '#fff68f',
+      '#f08080',
+      '#ffc3a0',
+      '#66cdaa',
+      '#4ca3dd',
+      '#ff6666',
+      '#f5f5f5',
+      '#ff7f50',
+      '#ffff66',
+      '#00ff7f',
+      '#6897bb',
+      '#66cccc',
+      '#3399ff',
+      '#a0db8e',
+      '#daa520',
+      '#b4eeb4',
+      '#b6fcd5',
+      '#f5f5f5',
+      '#afeeee',
+      '#333333',
+      '#ff8b94',
+      '#ffaaa5',
+      '#1ebbd7',
+      '#71c73c',
+      '#189ad3',
+    ];
+    var colors = [];
+    for (var i = 0; i < num_of_colors; i++) {
+      let rand = [Math.floor(Math.random() * color_palette.length)];
+      colors.push(color_palette[rand]);
+      color_palette.splice(rand, 1);
+    }
+    return colors;
+  } // return same number of colors as number of items in data passed in
+
+  getMonday(d) {
+    d = new Date(d);
+    var day = d.getDay(),
+      diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
+    return new Date(d.setDate(diff));
+  }
+  getWeek(day) {
+    let week = [];
+    var d = this.getMonday(day);
+    for (let i = 1; i <= 7; i++) week.push(fn.getDateString(d)), d.setDate(d.getDate() + 1);
+    return week;
+  }
+
   dayChartPieData(date, timeTable) {
     if (timeTable == null) {
       return;
@@ -127,21 +192,39 @@ export class ChartData {
     const usage = timeTableFunctions.getDayUsage(date, timeTable);
     let data = [];
     let labels = [];
-    for (let [url, time] of Object.entries(usage)) typeof url === 'string' && labels.push(url), typeof time === 'number' && data.push(time);
-
+    for (let [url, usage] of Object.entries(usage)) {
+      if (typeof url === 'string' && typeof usage['total'] === 'number') {
+        labels.push(url);
+        data.push(usage['total']);
+      }
+    }
+    let color = this.colors(data.length);
     return {
+      labels: labels,
       datasets: [
         {
+          label: "Today's usage",
+          backgroundColor: color,
           data: data,
         },
       ],
-      labels: labels,
     };
   }
   weekChartPieData() {}
   monthChartPieData() {}
-  weekChartSite() {}
-  monthChartSite() {}
+  weekSiteDataArray(date, url, timeTable) {
+    var week = this.getWeek(date);
+    let data = [];
+    week.forEach(day => {
+      if (timeTable.hasOwnProperty(day) && timeTable[day].hasOwnProperty(url) && timeTable[day][url].hasOwnProperty('total') && typeof timeTable[day][url]['total'] === 'number') {
+        data.push(timeTable[day][url]['total']);
+      } else {
+        data.push(null);
+      }
+    });
+    return data;
+  }
+  monthChartSiteLineData() {}
   weekChartTotalTime() {}
   monthChartTotalTime() {}
   siteWeekTime() {}

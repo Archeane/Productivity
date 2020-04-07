@@ -9,7 +9,6 @@ export default {
     options: { default: Chart.defaults.doughnut },
   },
   mounted() {
-    console.log(this.chartdata);
     this.renderChart(this.chartdata, this.options);
   },
 };
