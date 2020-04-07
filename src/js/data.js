@@ -212,7 +212,11 @@ export class ChartData {
   }
   weekChartPieData() {}
   monthChartPieData() {}
-  weekSiteDataArray(date, url, timeTable) {
+  weekSitesLineChartData() {}
+  monthSitesLineChartData() {}
+  weekTotalTimeLineChart() {}
+  monthTotalTimeLineChart() {}
+  siteWeekTime(date, url, timeTable) {
     var week = this.getWeek(date);
     let data = [];
     week.forEach(day => {
@@ -224,10 +228,6 @@ export class ChartData {
     });
     return data;
   }
-  monthChartSiteLineData() {}
-  weekChartTotalTime() {}
-  monthChartTotalTime() {}
-  siteWeekTime() {}
   siteMonthTime() {}
   sitesWeekTime() {}
   sitesMonthTime() {}

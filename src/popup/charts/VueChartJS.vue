@@ -50,7 +50,7 @@ export default {
     getTimeTable(response => {
       var data = chartDataProcessor.dayChartPieData(null, response);
       this.PieChartData = data;
-      var data_array = chartDataProcessor.weekSiteDataArray(new Date(), 'www.google.com', response);
+      var data_array = chartDataProcessor.siteWeekTime(new Date(), 'www.google.com', response);
       console.log(data_array);
       this.LineChartData = {
         labels: ['mon', 'tue'],

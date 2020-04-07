@@ -183,28 +183,6 @@ var domains = {},
       }
     }
   },
-  // updateTimeTableOccurance = function(date, url) {
-  //   var formatted_url = fn.parseDomainFromUrl(url);
-  //   console.log(`formatted url: ${formatted_url}`);
-  //   if (timeTable.hasOwnProperty(date)) {
-  //     if (!timeTable[date].hasOwnProperty(formatted_url)) {
-  //       timeTable[date][domainObj.name] = {};
-  //     }
-  //     if (timeTable[date][formatted_url].hasOwnProperty('visits')) {
-  //       return timeTable[date][formatted_url]['visits'].push(Date.now());
-  //     } else {
-  //       return (timeTable[date][formatted_url]['visits'] = [Date.now()]);
-  //     }
-  //   } else {
-  //     timeTable[date] = {};
-  //     timeTable[date][formatted_url] = {};
-  //     return (timeTable[date][formatted_url]['visits'] = [Date.now()]);
-  //   }
-  // },
-  //   updateVisitPeriod = function(){
-  //       chrome.idle.queryState
-
-  //   }
   //=====================
   clearAllGeneratedData = function() {
     return (
@@ -352,9 +330,6 @@ var domains = {},
       !0
     );
   },
-  //============
-
-  //============
   updateDomains = function(e) {
     // updates the domain object in file
     var a,
@@ -362,11 +337,50 @@ var domains = {},
       s,
       n = fn.getDateString();
     dates.today !== n && ((dates.today = n), (seconds.today = 0)),
-      chrome.windows.getLastFocused(
-        {
-          populate: !0,
-        },
-        function(n) {
+      chrome.idle.queryState(settings.idleTime, function(state) {
+        chrome.windows.getLastFocused({ populate: true }, function(window) {
+          if (chrome.runtime.lastError) {
+            console.log(chrome.runtime.lastError.message);
+          }
+
+          if (!window) {
+            return;
+          }
+          var ind,
+            lastVisitedUrl,
+            tab = null,
+            ignoreTick = false;
+          for (ind = 0; ind < window.tabs.length; ind += 1) {
+            if (window.tabs[ind].highlighted) {
+              tab = window.tabs[ind];
+            }
+          }
+          if (tab && window.focused) {
+            // Else There is no active tab. For ex.: It could be Developer Tool Window
+            // console.log(tab.favIconUrl, tab.title);
+            lastVisitedUrl = tab.url;
+            var d = (window.id, window.focused, tab.id);
+            var a = fn.parseDomainFromUrl(tab.url);
+            fn.dcl('LOG (' + dates.today + '): ' + a), domains.hasOwnProperty(a) || ((domains[a] = fn.getDomainObj()), (domains[a].name = a));
+            var i = domains[a];
+
+            (i.days[dates.today] = i.days[dates.today] || fn.getDayObj()),
+              e ||
+                ((i.alltime.seconds += config.INTERVAL_UPDATE_S),
+                (i.days[dates.today].seconds += config.INTERVAL_UPDATE_S),
+                (seconds.today += config.INTERVAL_UPDATE_S),
+                (seconds.alltime += config.INTERVAL_UPDATE_S),
+                (domainsChanged = !0)),
+              setBadge(d, fn.getBadgeTimeString(i.days[dates.today].seconds));
+            //console.log(`today's time on ${a} is ${i.days[dates.today].seconds}s, limit: ${blockedSites.hasOwnProperty(a) && blockedSites[a].daylimit.seconds}`);
+
+            //add to timetable
+            updateTimeTable(dates.today, domains[a]);
+          }
+        });
+      });
+    /*
+      chrome.windows.getLastFocused( {populate: !0,}, function(n) {
           // n = most recently focused window
           for (var o in n.tabs)
             if (n.tabs.hasOwnProperty(o) && n.tabs[o].active === !0) {
@@ -418,36 +432,36 @@ var domains = {},
             }
           });
         }
-      );
+      );*/
   };
-// chrome.tabs.onActivated.addListener(function(e) {
-//   var a,
-//     t = e.tabId;
-//   return (
-//     chrome.tabs.get(t, function(e) {
-//       //a = fn.parseDomainFromUrl(e.url), setBadge(t, ""), domains[a] && domains[a].days[dates.today] && setBadge(t, getBadgeTimeString(domains[a].days[dates.today].seconds))
-//       updateTimeTableOccurance(dates.today, e.url);
-//       a = fn.parseDomainFromUrl(e.url);
-//       console.log(timeTable[dates.today][a]['visits']);
-//     }),
-//     !0
-//   );
-// });
-// chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
-//   if (changeInfo.status == 'complete') {
-//     console.log(changeInfo);
-//     return (
-//       chrome.tabs.get(tabId, function(tab) {
-//         if (!tab.url.includes('chrome://newtab')) {
-//           updateTimeTableOccurance(dates.today, tab.url);
-//           var a = fn.parseDomainFromUrl(tab.url);
-//           console.log(timeTable[dates.today][a]['visits']);
-//         }
-//       }),
-//       !0
-//     );
-//   }
-// });
+/* chrome.tabs.onActivated.addListener(function(e) {
+    var a,
+      t = e.tabId;
+    return (
+      chrome.tabs.get(t, function(e) {
+        //a = fn.parseDomainFromUrl(e.url), setBadge(t, ""), domains[a] && domains[a].days[dates.today] && setBadge(t, getBadgeTimeString(domains[a].days[dates.today].seconds))
+        updateTimeTableOccurance(dates.today, e.url);
+        a = fn.parseDomainFromUrl(e.url);
+        console.log(timeTable[dates.today][a]['visits']);
+      }),
+      !0
+    );
+  });
+  chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
+    if (changeInfo.status == 'complete') {
+      console.log(changeInfo);
+      return (
+        chrome.tabs.get(tabId, function(tab) {
+          if (!tab.url.includes('chrome://newtab')) {
+            updateTimeTableOccurance(dates.today, tab.url);
+            var a = fn.parseDomainFromUrl(tab.url);
+            console.log(timeTable[dates.today][a]['visits']);
+          }
+        }),
+        !0
+      );
+    }
+  });*/
 fn.dcl('Webtime Tracker - background.js loaded');
 loadDateStart(dates.today);
 loadSecondsAlltime();
