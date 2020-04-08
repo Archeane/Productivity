@@ -15,19 +15,34 @@ class TimeTable {
   // get usage total per time unit
   // @return {url: time}
   getDayUsage(day, timeTable) {
-    return timeTable[fn.getDateString(day)];
+    const dayUsage = {};
+    Object.entries(timeTable[fn.getDateString(day)])
+      .sort((a, b) => b[1]['total'] - a[1]['total'])
+      .forEach(day => {
+        dayUsage[day[0]] = day[1]['total'];
+      });
+    return dayUsage;
   }
 
+  /**
+   *
+   * @param {Array} week
+   * @param {Object} timeTable
+   * @return {Map} sorted url => usage
+   */
   getWeekUsage(week, timeTable) {
-    weekUsage = [];
+    var weekUsage = {}; // url: total_time
     week.forEach(day => {
       if (timeTable.hasOwnProperty(day)) {
-        weekUsage.push(timeTable[day]);
-      } else {
-        weekUsage.push(null);
+        for (let [url, usage] of Object.entries(timeTable[day])) {
+          if (typeof url === 'string' && typeof usage['total'] === 'number') {
+            if (weekUsage.hasOwnProperty(url)) weekUsage[url] += usage['total'];
+            else weekUsage[url] = usage['total'];
+          }
+        }
       }
     });
-    return weekUsage;
+    return new Map(Object.entries(weekUsage).sort((a, b) => b[1] - a[1]));
   }
 
   getMonthUsage(month) {
@@ -52,6 +67,7 @@ class TimeTable {
    * @param {number} n
    * @param {Array} timeFrame
    * @param {Object} timeTable
+   * @return {Array} [site1, site2, site3...]
    */
   getTopNSites(n, timeFrame, timeTable) {
     if (timeFrame.length == 1) {
@@ -153,19 +169,13 @@ export class ChartData {
     return week;
   }
 
-  dayChartPieData(date, timeTable) {
+  dayChartPieData(date, timeTable, max) {
     if (timeTable == null) {
       return;
     }
-    const usage = timeTableFunctions.getDayUsage(date, timeTable);
-    let data = [];
-    let labels = [];
-    for (let [url, usage] of Object.entries(usage)) {
-      if (typeof url === 'string' && typeof usage['total'] === 'number') {
-        labels.push(url);
-        data.push(usage['total']);
-      }
-    }
+    const dayUsage = timeTableFunctions.getDayUsage(date, timeTable);
+    let labels = Object.keys(dayUsage).slice(0, max);
+    let data = Object.values(dayUsage).slice(0, max);
     let color = this.colors(data.length);
     return {
       labels: labels,
@@ -178,20 +188,14 @@ export class ChartData {
       ],
     };
   }
-  weekChartPieData(date, timeTable) {
+  weekChartPieData(date, timeTable, max) {
     if (timeTable == null) {
       return;
     }
     const week = this.getWeek(date);
-    const usage = timeTableFunctions.getWeekUsage(week, timeTable);
-    let data = [];
-    let labels = [];
-    for (let [url, usage] of Object.entries(usage)) {
-      if (typeof url === 'string' && usage.hasOwnProperty('total') && typeof usage['total'] === 'number') {
-        labels.push(url);
-        data.push(usage['total']);
-      }
-    }
+    var weekUsage = timeTableFunctions.getWeekUsage(week, timeTable);
+    let labels = [...weekUsage.keys()].slice(0, max);
+    let data = [...weekUsage.values()].slice(0, max);
     let color = this.colors(data.length);
     return {
       labels: labels,

@@ -9,7 +9,7 @@ export default class Config {
     this.SCREENSHOT_INSTRUCTIONS_READ_DEFAULT = !1;
     this.SCROLLBAR_WIDTH = '12';
     this.BADGE_DISPLAY_DEFAULT = !0;
-    this.INTERVAL_UPDATE_S = 3;
+    this.INTERVAL_UPDATE_S = 1;
     this.INTERVAL_UPDATE_MS = 1e3 * this.INTERVAL_UPDATE_S;
     this.INTERVAL_SAVE_MS = 6e4;
     this.INTERVAL_UI_LOADING = 2e3;

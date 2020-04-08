@@ -50,8 +50,9 @@ export default {
   async mounted() {
     this.loaded = false;
     getTimeTable(response => {
-      this.PieChartDayData = chartDataProcessor.dayChartPieData(null, response);
+      this.PieChartDayData = chartDataProcessor.dayChartPieData(new Date(), response, 10);
       this.LineChartData = chartDataProcessor.weekTopNSitesLineChartData(new Date(), 5, response);
+      this.PieChartWeekData = chartDataProcessor.weekChartPieData(new Date(), response, 10);
       this.loaded = true;
     });
   },
