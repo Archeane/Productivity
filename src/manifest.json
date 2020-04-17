@@ -19,6 +19,7 @@
     "chrome_style": true
   },
   "offline_enabled": true,
-  "optional_permissions": [ "\u003Call_urls>" ],
-  "permissions": [ "tabs", "idle", "storage", "unlimitedStorage", "webRequest", "webRequestBlocking", "https://www.facebook.com/"]
+  "optional_permissions": ["\u003Call_urls>"],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'",
+  "permissions": ["tabs", "idle", "storage", "unlimitedStorage", "webRequest", "webRequestBlocking", "https://www.facebook.com/"]
 }

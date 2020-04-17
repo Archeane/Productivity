@@ -2,6 +2,7 @@
 
 import Fn from './fn.js';
 import Config from './config.js';
+import moment from 'moment';
 
 var fn = new Fn();
 var config = new Config();
@@ -168,6 +169,126 @@ export class ChartData {
     for (let i = 1; i <= 7; i++) week.push(fn.getDateString(d)), d.setDate(d.getDate() + 1);
     return week;
   }
+  getDaySiteIntervals(day, timeTable) {
+    const date = fn.getDateString(day);
+    var visits = [];
+    for (let [url, usage] of Object.entries(timeTable[date])) {
+      if (usage['total'] > 600) {
+        var data = [];
+        usage['visits'].forEach(interval => {
+          typeof interval === 'object' && interval[1] - interval[0] > 300 && data.push({ x: date, y: interval });
+        });
+        visits.push({ name: url, data: data });
+      }
+    }
+    // for (let [url, usage] of Object.entries(timeTable[date])){
+    //     if (usage['total'] > 600){
+    //         var data = []
+    //         usage['visits'].forEach((interval) => {
+    //             typeof(interval) === "object" && data.push({x: url, y: interval})
+    //         });
+    //         visits.push({name: url, data: data})
+    //     }
+    // }
+    return visits;
+  }
+
+  getNewDateByHour(hour, date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0);
+  }
+
+  breakDayToHoursIntervals(intervals) {
+    intervals.sort((a, b) => {
+      return a['timeRange'][0] - b['timeRange'][0];
+    });
+    var intByHours = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
+    var currentHour = intervals[0]['timeRange'][0].getHours();
+    for (let intervalObj of intervals) {
+      let interval = intervalObj['timeRange'];
+      if (interval[0].getHours() == currentHour && interval[1].getHours() > currentHour) {
+        intByHours[currentHour].push({
+          timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
+          val: intervalObj['val'],
+        });
+        currentHour += 1;
+        while (interval[1].getHours() > currentHour) {
+          intByHours[currentHour].push({
+            timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+            val: intervalObj['val'],
+          });
+          currentHour += 1;
+        }
+        intByHours[currentHour].push({
+          timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
+          val: intervalObj['val'],
+        });
+      } else if (interval[0].getHours() == currentHour && interval[1].getHours() == currentHour) {
+        intByHours[currentHour].push({
+          timeRange: [interval[0], interval[1]],
+          val: intervalObj['val'],
+        });
+      } else if (interval[0].getHours() > currentHour) {
+        while (interval[0].getHours() > currentHour) {
+          currentHour += 1;
+        }
+        if (interval[1].getHours() == currentHour) {
+          intByHours[currentHour].push({
+            timeRange: [interval[0], interval[1]],
+            val: intervalObj['val'],
+          });
+        } else {
+          intByHours[currentHour].push({
+            timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
+            val: intervalObj['val'],
+          });
+          currentHour += 1;
+          while (interval[1].getHours() > currentHour) {
+            intByHours[currentHour].push({
+              timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+              val: intervalObj['val'],
+            });
+            currentHour += 1;
+          }
+          intByHours[currentHour].push({
+            timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
+            val: intervalObj['val'],
+          });
+        }
+      }
+    }
+    return intByHours;
+  }
+
+  getDayIntervals(day, timeTable) {
+    const date = fn.getDateString(day);
+    var visits = [];
+    for (let [url, usage] of Object.entries(timeTable[date])) {
+      if (usage['total'] > 600) {
+        usage['visits'].forEach(interval => {
+          typeof interval === 'object' &&
+            interval[1] - interval[0] > 100 * 1000 &&
+            visits.push({
+              timeRange: [new Date(interval[0]), new Date(interval[1])],
+              val: url,
+            });
+        });
+      }
+    }
+
+    var intByHour = this.breakDayToHoursIntervals(visits);
+    return intByHour;
+    return [
+      {
+        group: date,
+        data: [
+          {
+            label: '',
+            data: visits,
+          },
+        ],
+      },
+    ];
+  }
 
   dayChartPieData(date, timeTable, max) {
     if (timeTable == null) {
@@ -236,7 +357,16 @@ export class ChartData {
     };
   }
   monthSitesLineChartData() {}
-  weekTotalTimeLineChart() {}
+  weekTotalTimeLineChart(date, timeTable) {
+    var weekTotal = [0, 0, 0, 0, 0, 0, 0];
+    const week = this.getWeek(date);
+    for (var i = 0; i < week.length; i++) {
+      if (timeTable.hasOwnProperty(day)) {
+        for (let [url, usage] in timeTable[day]) if (usage.hasOwnProperty('total') && typeof usage['total'] === 'number') weekTotal[i] += usage['total'];
+      }
+    }
+    return weekTotal;
+  }
   monthTotalTimeLineChart() {}
 
   siteWeekTime(week, url, timeTable) {

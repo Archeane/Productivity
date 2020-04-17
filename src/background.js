@@ -157,7 +157,7 @@ var domains = {},
         }
         if (domainObj['days'][date].hasOwnProperty('seconds')) {
           let a = timeTable[date][domainObj.name];
-          a['total'] += domainObj['days'][date]['seconds'];
+          a['total'] = domainObj['days'][date]['seconds'];
           // update visiting period
           if (a.hasOwnProperty('visits')) {
             //check if current time is within tick frame of last visiting period's last active time
