@@ -3,7 +3,6 @@ const ejs = require('ejs');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const ExtensionReloader = require('webpack-extension-reloader');
-const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
 const { VueLoaderPlugin } = require('vue-loader');
 const { version } = require('./package.json');
 
@@ -95,7 +94,6 @@ const config = {
     new webpack.DefinePlugin({
       global: 'window',
     }),
-    new VuetifyLoaderPlugin(),
     new VueLoaderPlugin(),
     new MiniCssExtractPlugin({
       filename: '[name].css',
