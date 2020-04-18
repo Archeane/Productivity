@@ -31,7 +31,7 @@ class TimeTable {
    * @param {Object} timeTable
    * @return {Map} sorted url => usage
    */
-  getWeekUsage(week, timeTable) {
+  getWeekTotalUsage(week, timeTable) {
     var weekUsage = {}; // url: total_time
     week.forEach(day => {
       if (timeTable.hasOwnProperty(day)) {
@@ -44,6 +44,32 @@ class TimeTable {
       }
     });
     return new Map(Object.entries(weekUsage).sort((a, b) => b[1] - a[1]));
+  }
+
+  /**
+   *
+   * @param {Array} week
+   * @param {Object} timeTable
+   * @returns url => [day1_usage, day2_usage ... day7_usage]
+   */
+  getWeekUsage(week, timeTable) {
+    var weekUsage = {};
+    for (var i = 0; i < week.length; i++) {
+      const day = week[i];
+      if (day in timeTable) {
+        for (let [url, usage] of Object.entries(timeTable[day])) {
+          if (typeof url === 'string') {
+            if (!(url in weekUsage)) {
+              weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
+            }
+            if (usage['total'] / 60 < 1000) {
+              weekUsage[url][i] = usage['total'] / 60;
+            }
+          }
+        }
+      }
+    }
+    return weekUsage;
   }
 
   getMonthUsage(month) {
@@ -149,6 +175,9 @@ export class ChartData {
       '#189ad3',
     ];
     var colors = [];
+    if (num_of_colors > color_palette.length) {
+      return color_palette;
+    }
     for (var i = 0; i < num_of_colors; i++) {
       let rand = [Math.floor(Math.random() * color_palette.length)];
       colors.push(color_palette[rand]);
@@ -169,6 +198,36 @@ export class ChartData {
     for (let i = 1; i <= 7; i++) week.push(fn.getDateString(d)), d.setDate(d.getDate() + 1);
     return week;
   }
+
+  weekChartBarData(date, timeTable) {
+    if (timeTable == null) {
+      return;
+    }
+    const week = this.getWeek(date);
+    var weekUsage = timeTableFunctions.getWeekUsage(week, timeTable);
+    const colors = this.colors(Object.keys(weekUsage).length);
+    var datasets = [];
+    for (let [url, usageArr] of Object.entries(weekUsage)) {
+      const totalUsage = usageArr.reduce((a, b) => a + b, 0);
+      if (
+        totalUsage > 300 &&
+        usageArr.filter(x => {
+          return x !== 0;
+        }).length > 1
+      ) {
+        datasets.push({
+          label: url,
+          backgroundColor: colors.pop() || 'RED',
+          data: usageArr,
+        });
+      }
+    }
+    return {
+      labels: week,
+      datasets: datasets,
+    };
+  }
+
   getDaySiteIntervals(day, timeTable) {
     const date = fn.getDateString(day);
     var visits = [];
@@ -176,9 +235,17 @@ export class ChartData {
       if (usage['total'] > 600) {
         var data = [];
         usage['visits'].forEach(interval => {
-          typeof interval === 'object' && interval[1] - interval[0] > 300 && data.push({ x: date, y: interval });
+          typeof interval === 'object' &&
+            interval[1] - interval[0] > 300 &&
+            data.push({
+              x: date,
+              y: interval,
+            });
         });
-        visits.push({ name: url, data: data });
+        visits.push({
+          name: url,
+          data: data,
+        });
       }
     }
     // for (let [url, usage] of Object.entries(timeTable[date])){
@@ -314,7 +381,7 @@ export class ChartData {
       return;
     }
     const week = this.getWeek(date);
-    var weekUsage = timeTableFunctions.getWeekUsage(week, timeTable);
+    var weekUsage = timeTableFunctions.getWeekTotalUsage(week, timeTable);
     let labels = [...weekUsage.keys()].slice(0, max);
     let data = [...weekUsage.values()].slice(0, max);
     let color = this.colors(data.length);
@@ -346,7 +413,12 @@ export class ChartData {
       sitesUsage[site] = this.siteWeekTime(week, site, timeTable);
     });
     var datasets = [];
-    for (let [url, time_arr] of Object.entries(sitesUsage)) datasets.push({ data: time_arr, label: url, fill: false });
+    for (let [url, time_arr] of Object.entries(sitesUsage))
+      datasets.push({
+        data: time_arr,
+        label: url,
+        fill: false,
+      });
     const colors = this.colors(n);
     datasets.forEach(dataset => {
       dataset['borderColor'] = colors.pop();
