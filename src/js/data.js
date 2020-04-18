@@ -268,7 +268,31 @@ export class ChartData {
     intervals.sort((a, b) => {
       return a['timeRange'][0] - b['timeRange'][0];
     });
-    var intByHours = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
+    var intByHours = [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ];
     var currentHour = intervals[0]['timeRange'][0].getHours();
     for (let intervalObj of intervals) {
       let interval = intervalObj['timeRange'];
@@ -344,17 +368,13 @@ export class ChartData {
 
     var intByHour = this.breakDayToHoursIntervals(visits);
     return intByHour;
-    return [
-      {
-        group: date,
-        data: [
-          {
-            label: '',
-            data: visits,
-          },
-        ],
-      },
-    ];
+    return [{
+      group: date,
+      data: [{
+        label: '',
+        data: visits,
+      }, ],
+    }, ];
   }
 
   dayChartPieData(date, timeTable, max) {
@@ -367,13 +387,11 @@ export class ChartData {
     let color = this.colors(data.length);
     return {
       labels: labels,
-      datasets: [
-        {
-          label: "Today's usage",
-          backgroundColor: color,
-          data: data,
-        },
-      ],
+      datasets: [{
+        label: "Today's usage",
+        backgroundColor: color,
+        data: data,
+      }, ],
     };
   }
   weekChartPieData(date, timeTable, max) {
@@ -387,13 +405,11 @@ export class ChartData {
     let color = this.colors(data.length);
     return {
       labels: labels,
-      datasets: [
-        {
-          label: "This Week's usage",
-          backgroundColor: color,
-          data: data,
-        },
-      ],
+      datasets: [{
+        label: "This Week's usage",
+        backgroundColor: color,
+        data: data,
+      }, ],
     };
   }
   monthChartPieData() {}
@@ -434,7 +450,8 @@ export class ChartData {
     const week = this.getWeek(date);
     for (var i = 0; i < week.length; i++) {
       if (timeTable.hasOwnProperty(day)) {
-        for (let [url, usage] in timeTable[day]) if (usage.hasOwnProperty('total') && typeof usage['total'] === 'number') weekTotal[i] += usage['total'];
+        for (let [url, usage] in timeTable[day])
+          if (usage.hasOwnProperty('total') && typeof usage['total'] === 'number') weekTotal[i] += usage['total'];
       }
     }
     return weekTotal;
@@ -456,12 +473,24 @@ export class ChartData {
 }
 
 export async function getTimeTable(cb) {
-  chrome.runtime.sendMessage(
-    {
+  chrome.runtime.sendMessage({
       request: 'getTimeTable',
     },
-    function(response) {
+    function (response) {
       cb(response.done);
     }
   );
+}
+
+export async function addWatchSite(url) {
+  return new Promise((res, rej) => {
+    try{
+      chrome.runtime.sendMessage({
+        request: 'addWatchSite',
+        url: url,
+      }, (response) => {
+        res(response)
+      });
+    }catch(err){rej(err)}
+  });
 }

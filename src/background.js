@@ -44,7 +44,8 @@ var storageLocal = (function() {
 })();
 
 var domains = {},
-  blockedSites = {}, //domain : time limite per day,
+  watchSites = [], // [url1, url2 ...]
+  blockedSites = {},
   timeTable = {}, // date: [{domain: timeForDomain}...]
   dates = {
     today: fn.getDateString(),
@@ -67,6 +68,7 @@ var domains = {},
   domainsChanged = !1,
   blockedSitesChanged = !1,
   STORAGE_DOMAINS = 'domains',
+  STORAGE_WATCH_SITES = 'watch-sites',
   STORAGE_BLOCKED_SITES = 'blocked-sites',
   STORAGE_TIME_TABLE = 'time-table',
   STORAGE_DATE_START = 'date-start',
@@ -97,6 +99,23 @@ var domains = {},
     );
   },
   //=====================
+  loadWatchSites = function(cb){
+    return (
+      storageLocal.load(STORAGE_WATCH_SITES, [], function(watch_sites) {
+        cb(watch_sites);
+        fn.dcl('Watch Sites loaded: ' + Object.keys(watch_sites).length + ' watch_sites');
+        console.log(watch_sites);
+      }),
+      !0
+    );
+  },
+  addWatchSites = function(url){  
+    watchSites.indexOf(url) === -1 && watchSites.push(url);
+  },
+  removeWatchSites = function(url){
+    index = watchSites.indexOf(url);
+    index !== -1 && watchSites.splice(index, 1);
+  },
   loadBlockedSites = function(cb) {
     return (
       storageLocal.load(STORAGE_BLOCKED_SITES, {}, function(blocked_sites) {
@@ -393,6 +412,9 @@ loadDomains(function(e) {
 loadBlockedSites(function(e) {
   blockedSites = e[STORAGE_BLOCKED_SITES];
 });
+loadWatchSites(function(e) {
+  watchSites = e[STORAGE_WATCH_SITES];
+});
 loadTimeTable(function(e) {
   timeTable = e[STORAGE_TIME_TABLE];
 });
@@ -420,6 +442,22 @@ timeIntervals.save = window.setInterval(function() {
 
 // //check if current url is contained in blocked_sites
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message.request == 'getWatchSites') {
+    sendResponse({ done: WatchSites });
+  }
+  if (message.request == 'addWatchSite') {
+    var url = message.url;
+    if(fn.validUrl(url)) {
+      addWatchSites(fn.parseDomainFromUrl(url));
+      sendResponse({status: 200, url: fn.parseDomainFromUrl(url)})
+    }else{ sendResponse({status: 400})} ;
+    
+  }
+  if (message.request == 'deleteWatchSites') {
+    var data = message.data;
+    var response = deleteWatchSites(data.domain);
+    return response == true ? sendResponse({ done: true, message: null }) : sendResponse({ done: false, message: response });
+  }
   if (message.request == 'getBlockedSites') {
     sendResponse({ done: blockedSites });
   }
