@@ -14,10 +14,7 @@
   "background": {
     "scripts": ["background.js"]
   },
-  "options_ui": {
-    "page": "options/options.html",
-    "chrome_style": true
-  },
+  "options_page": "options/options.html",
   "offline_enabled": true,
   "optional_permissions": ["\u003Call_urls>"],
   "content_security_policy": "script-src 'self' 'unsafe-eval'",
