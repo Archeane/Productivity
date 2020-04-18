@@ -35,8 +35,8 @@ export default {
       this.PieChartDayData = chartDataProcessor.dayChartPieData(new Date(), response, 10);
       this.LineChartData = chartDataProcessor.weekTopNSitesLineChartData(new Date(), 5, response);
       this.PieChartWeekData = chartDataProcessor.weekChartPieData(new Date(), response, 10);
-      this.TimelineSiteChartData = chartDataProcessor.getDaySiteIntervals(new Date(), response);
-      this.DayTimelineChartData = chartDataProcessor.getDayIntervals(new Date(), response);
+      this.TimelineSiteChartData = chartDataProcessor.daySitesTimeline(new Date(), response);
+      this.DayTimelineChartData = chartDataProcessor.dayTimeline(new Date(), response);
       var data = chartDataProcessor.weekChartBarData(new Date(), response);
       console.log(data);
       this.StackedBarWeekChartData = data;
