@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import VueChartJS from './charts/VueChartJS.vue';
+import VueChartJS from '../charts/VueChartJS.vue';
 
 export default {
   name: 'app',
