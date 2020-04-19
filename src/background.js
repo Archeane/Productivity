@@ -99,7 +99,7 @@ var domains = {},
     );
   },
   //=====================
-  loadWatchSites = function(cb){
+  loadWatchSites = function(cb) {
     return (
       storageLocal.load(STORAGE_WATCH_SITES, [], function(watch_sites) {
         cb(watch_sites);
@@ -109,10 +109,18 @@ var domains = {},
       !0
     );
   },
-  addWatchSites = function(url){  
+  saveWatchSites = function() {
+    return (
+      storageLocal.save(STORAGE_WATCH_SITES, watchSites, function() {
+        fn.dcl('Watch Sites saved: ' + Object.keys(watchSites).length + ' watch sites');
+      }),
+      !0
+    );
+  },
+  addWatchSites = function(url) {
     watchSites.indexOf(url) === -1 && watchSites.push(url);
   },
-  removeWatchSites = function(url){
+  removeWatchSites = function(url) {
     index = watchSites.indexOf(url);
     index !== -1 && watchSites.splice(index, 1);
   },
@@ -206,9 +214,11 @@ var domains = {},
   clearAllGeneratedData = function() {
     return (
       (domains = {}),
+      (watchSites = []),
       (blockedSites = {}),
       (timeTable = {}),
       saveDomains(),
+      saveWatchSites(),
       saveBlockedSites(),
       saveTimeTable(),
       (seconds.today = 0),
@@ -432,6 +442,7 @@ timeIntervals.update = window.setInterval(function() {
 timeIntervals.save = window.setInterval(function() {
   domainsChanged &&
     (saveDomains(),
+    saveWatchSites(),
     saveBlockedSites(),
     saveTimeTable(),
     saveSecondsAlltime(),
@@ -443,15 +454,16 @@ timeIntervals.save = window.setInterval(function() {
 // //check if current url is contained in blocked_sites
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.request == 'getWatchSites') {
-    sendResponse({ done: WatchSites });
+    sendResponse({ done: watchSites });
   }
   if (message.request == 'addWatchSite') {
     var url = message.url;
-    if(fn.validUrl(url)) {
+    if (fn.validUrl(url)) {
       addWatchSites(fn.parseDomainFromUrl(url));
-      sendResponse({status: 200, url: fn.parseDomainFromUrl(url)})
-    }else{ sendResponse({status: 400})} ;
-    
+      sendResponse({ status: 200, url: fn.parseDomainFromUrl(url) });
+    } else {
+      sendResponse({ status: 400 });
+    }
   }
   if (message.request == 'deleteWatchSites') {
     var data = message.data;
