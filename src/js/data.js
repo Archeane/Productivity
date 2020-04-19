@@ -413,8 +413,25 @@ export class ChartData {
     };
   }
 
-  weekSiteUsageLineChart(url) {
-    return this.TimeTable.siteWeekTime(this.thisWeek, url);
+  weekSiteUsageLineChart(urls, day) {
+    const week = this.thisWeek;
+    if (day != null) {
+      week = this.getWeek(day);
+    }
+    var datasets = [];
+    const colors = this.colors(urls.length);
+    urls.forEach(url => {
+      datasets.push({
+        label: url,
+        borderColor: colors.pop(),
+        fill: false,
+        data: this.TimeTable.siteWeekTime(week, url),
+      });
+    });
+    return {
+      labels: week,
+      datasets: datasets,
+    };
   }
 
   /**
