@@ -6,7 +6,6 @@ import moment from 'moment';
 import { colors } from 'vuetify/lib';
 
 var fn = new Fn();
-
 /**
  * Line charts:
  *        1) Week total usage
@@ -96,25 +95,33 @@ class TimeTableData {
    *
    * @param {*} day
    * @param {*} timeTable
-   * @returns url => total_time
+   * @returns sorted url => total_time_today
    */
   getDayUsage(day) {
+    if (!(fn.getDateString(day) in this.timeTable)) {
+      return {};
+    }
     const dayUsage = {};
     Object.entries(this.timeTable[fn.getDateString(day)])
       .sort((a, b) => b[1]['total'] - a[1]['total'])
       .forEach(day => {
-        dayUsage[day[0]] = day[1]['total'] / 60;
+        dayUsage[day[0]] = Math.floor(day[1]['total'] / 60);
       });
     return dayUsage;
   }
 
+  /**
+   *
+   * @param {Array} week
+   * @returns {Array} [day1_total, 0, day3_total...]
+   */
   getWeekTotalTime(week) {
     var weekTotal = [0, 0, 0, 0, 0, 0, 0];
     for (var i = 0; i < week.length; i++) {
       const day = week[i];
       if (day in this.timeTable) {
         for (let [_, usage] of Object.entries(this.timeTable[day])) {
-          weekTotal[i] += usage['total'] / 60;
+          weekTotal[i] += Math.floor(usage['total'] / 60);
         }
       }
     }
@@ -132,8 +139,8 @@ class TimeTableData {
       if (this.timeTable.hasOwnProperty(day)) {
         for (let [url, usage] of Object.entries(this.timeTable[day])) {
           if (typeof url === 'string' && typeof usage['total'] === 'number') {
-            if (url in weekUsage && usage['total'] / 60 < 1000) weekUsage[url] += usage['total'] / 60;
-            else weekUsage[url] = usage['total'] / 60;
+            if (url in weekUsage && usage['total'] / 60 < 1000) weekUsage[url] += Math.floor(usage['total'] / 60);
+            else weekUsage[url] = Math.floor(usage['total'] / 60);
           }
         }
       }
@@ -157,7 +164,7 @@ class TimeTableData {
               weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
             }
             if (usage['total'] / 60 < 1000) {
-              weekUsage[url][i] = usage['total'] / 60;
+              weekUsage[url][i] = Math.floor(usage['total'] / 60);
             }
           }
         }
@@ -251,7 +258,7 @@ class WatchSitesData {
         const day = week[i];
         if (url in this.timeTable[day]) {
           if (!(url in weekUsage)) weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
-          weekUsage[url][i] = this.timeTable[day][url]['total'] / 60;
+          weekUsage[url][i] = Math.floor(this.timeTable[day][url]['total'] / 60);
         }
       }
     });
@@ -267,7 +274,7 @@ class WatchSitesData {
     var weekUsage = 0;
     this.watchSites.forEach(url => {
       week.forEach(day => {
-        if (url in this.timeTable[day]) weekUsage += this.timeTable[day][url]['total'] / 60;
+        if (url in this.timeTable[day]) weekUsage += Math.floor(this.timeTable[day][url]['total'] / 60);
       });
     });
     return weekUsage;
@@ -356,7 +363,7 @@ export class ChartData {
     return week;
   }
 
-  // Line charts
+  // =============================Line charts =========================================
   /**
    *
    * @param {boolean} lastWeek - true: get two week's data
@@ -434,40 +441,44 @@ export class ChartData {
     };
   }
 
-  /**
-   *
-   * @param {Date} date
-   * @param {number} n
-   * @param {Object} timeTable
-   * @returns {LineChartDataObject} {labels: Array, datasets: Array[Objects]}
-   */
-  weekTopNSitesLineChartData(date, n, timeTable) {
-    var sitesUsage = {}; // url: [mon_usage, tues_usage ...]
-    const week = this.getWeek(date);
-    const topNSites = this.TimeTableData.getTopNSites(n, week, timeTable);
-    topNSites.forEach(site => {
-      sitesUsage[site] = this.TimeTableData.siteWeekTime(week, site, timeTable);
-    });
-    var datasets = [];
-    for (let [url, time_arr] of Object.entries(sitesUsage))
-      datasets.push({
-        data: time_arr,
-        label: url,
-        fill: false,
-      });
-    const colors = this.colors(n);
-    datasets.forEach(dataset => {
-      dataset['borderColor'] = colors.pop();
-    });
-    return {
-      labels: ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'],
-      datasets: datasets,
-    };
-  }
   monthSitesLineChartData() {}
   monthTotalTimeLineChart() {}
 
-  // Pie Charts
+  // ============================= Pie charts =========================================
+
+  dayChartPieData(date, max = 15) {
+    if (date == null) {
+      date = this.today;
+    }
+    const dayUsage = this.TimeTable.getDayUsage(date);
+    let labels = Object.keys(dayUsage).slice(0, max);
+    let data = Object.values(dayUsage).slice(0, max);
+    return {
+      labels: labels,
+      series: data,
+    };
+    // return {
+    //     labels: labels,
+    //     datasets: [{
+    //         label: "Today's usage",
+    //         backgroundColor: color,
+    //         data: data,
+    //     }, ],
+    // };
+  }
+  weekChartPieData(date, max) {
+    if (date == null) date = this.today;
+    const week = this.getWeek(date);
+    var weekUsage = this.TimeTable.getSitesWeekTotalUsage(week);
+    let labels = [...weekUsage.keys()].slice(0, max);
+    let data = [...weekUsage.values()].slice(0, max);
+    return {
+      labels: labels,
+      series: data,
+    };
+  }
+
+  // ============================= Bar charts =========================================
 
   weekChartBarData(date, timeTable) {
     if (timeTable == null) {
@@ -627,43 +638,34 @@ export class ChartData {
     ];
   }
 
-  dayChartPieData(date, timeTable, max) {
-    if (timeTable == null) {
-      return;
-    }
-    const dayUsage = timeTableFunctions.getDayUsage(date, timeTable);
-    let labels = Object.keys(dayUsage).slice(0, max);
-    let data = Object.values(dayUsage).slice(0, max);
-    let color = this.colors(data.length);
-    return {
-      labels: labels,
-      datasets: [
-        {
-          label: "Today's usage",
-          backgroundColor: color,
-          data: data,
-        },
-      ],
-    };
-  }
-  weekChartPieData(date, timeTable, max) {
-    if (timeTable == null) {
-      return;
-    }
+  /**
+   *
+   * @param {Date} date
+   * @param {number} n
+   * @param {Object} timeTable
+   * @returns {LineChartDataObject} {labels: Array, datasets: Array[Objects]}
+   */
+  weekTopNSitesLineChartData(date, n, timeTable) {
+    var sitesUsage = {}; // url: [mon_usage, tues_usage ...]
     const week = this.getWeek(date);
-    var weekUsage = timeTableFunctions.getSitesWeekTotalUsage(week, timeTable);
-    let labels = [...weekUsage.keys()].slice(0, max);
-    let data = [...weekUsage.values()].slice(0, max);
-    let color = this.colors(data.length);
+    const topNSites = this.TimeTableData.getTopNSites(n, week, timeTable);
+    topNSites.forEach(site => {
+      sitesUsage[site] = this.TimeTableData.siteWeekTime(week, site, timeTable);
+    });
+    var datasets = [];
+    for (let [url, time_arr] of Object.entries(sitesUsage))
+      datasets.push({
+        data: time_arr,
+        label: url,
+        fill: false,
+      });
+    const colors = this.colors(n);
+    datasets.forEach(dataset => {
+      dataset['borderColor'] = colors.pop();
+    });
     return {
-      labels: labels,
-      datasets: [
-        {
-          label: "This Week's usage",
-          backgroundColor: color,
-          data: data,
-        },
-      ],
+      labels: ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'],
+      datasets: datasets,
     };
   }
   monthChartPieData() {}

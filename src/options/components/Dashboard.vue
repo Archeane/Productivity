@@ -1,11 +1,11 @@
 <template>
   <section class="container">
-    <!-- <stacked-bar-chart v-if="loaded" :chartdata="StackedBarWeekChartData" />
-    <pie-chart v-if="loaded" :chartdata="PieChartDayData" />
-    <pie-chart v-if="loaded" :chartdata="PieChartWeekData" /> -->
+    <!-- <stacked-bar-chart v-if="loaded" :chartdata="StackedBarWeekChartData" /> -->
+    <pie-chart v-if="loaded" :chartSeries="PieChartDaySeries" :chartLabels="PieChartDayLabels" />
+    <pie-chart v-if="loaded" :chartSeries="PieChartWeekSeries" :chartLabels="PieChartWeekLabels" />
     <line-chart v-if="loaded" :chartdata="weekChartData.totalLine" />
     <line-chart v-if="loaded" :chartdata="weekChartData.watchSitesLine" />
-    <line-chart v-if="loaded" :chartdata="weekChartData.sitesLine" />
+    <!-- <line-chart v-if="loaded" :chartdata="weekChartData.sitesLine" /> -->
   </section>
 </template>
 <script>
@@ -27,8 +27,10 @@ export default {
       watchSitesLine: null,
       sitesLine: null,
     },
-    // PieChartDayData: null,
-    // PieChartWeekData: null,
+    PieChartDaySeries: null,
+    PieChartDayLabels: null,
+    PieChartWeekSeries: null,
+    PieChartWeekLabels: null,
     // LineChartData: null,
     // StackedBarWeekChartData: null,
   }),
@@ -37,7 +39,14 @@ export default {
     await chartDataProcessor.init();
     this.weekChartData.totalLine = chartDataProcessor.weekTotalTimeLineChart(true);
     this.weekChartData.watchSitesLine = chartDataProcessor.weekWatchSitesLineChart();
-    this.weekChartData.sitesLine = chartDataProcessor.weekSiteUsageLineChart(['www.facebook.com', 'www.bilibili.com']);
+    // this.weekChartData.sitesLine = chartDataProcessor.weekSiteUsageLineChart(['www.facebook.com', 'www.bilibili.com']);
+    var PieChartDayData = chartDataProcessor.dayChartPieData();
+    this.PieChartDaySeries = PieChartDayData.series;
+    this.PieChartDayLabels = PieChartDayData.labels;
+    var PieChartWeekData = chartDataProcessor.weekChartPieData();
+    this.PieChartWeekSeries = PieChartWeekData.series;
+    this.PieChartWeekLabels = PieChartWeekData.labels;
+
     this.loaded = true;
   },
   components: { LineChart, PieChart, StackedBarChart },
