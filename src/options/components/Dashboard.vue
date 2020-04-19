@@ -31,13 +31,11 @@ export default {
     // StackedBarWeekChartData: null,
   }),
   async mounted() {
+    await chartDataProcessor.init();
     this.loaded = false;
-    this.timeTable = await getTimeTable();
-    this.watchSites = await getWatchSites();
-    console.log(this.timeTable);
-    console.log(this.watchSites);
-    this.weekChartData.totalLine = chartDataProcessor.weekTotalTimeLineChart(true, this.timeTable);
-    this.weekChartData.watchSitesLine = await chartDataProcessor.weekWatchSitesLineChart(this.timeTable, this.watchSites);
+    // console.log(chartDataProcessor.weekSiteUsageLineChart("www.facebook.com"));
+    this.weekChartData.totalLine = chartDataProcessor.weekTotalTimeLineChart(true);
+    this.weekChartData.watchSitesLine = chartDataProcessor.weekWatchSitesLineChart();
     this.loaded = true;
     // getTimeTable(response => {
     //   this.weekChartData.totalLine = chartDataProcessor.weekTotalTimeLineChart(true, response);

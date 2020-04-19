@@ -9,14 +9,13 @@ var fn = new Fn();
 
 /**
  * Line charts:
- *   Week:
  *        1) Week total usage
- *        2) Week top n sites usage
- *        3) week watch sites usage - date => site usage on date
+ *        2) week watch sites usage - date => site usage on date
+ *        3) specifc site usage
  *
  * Donghout:
  *   Day:
- *      1) Day site => usage
+ *      1) Day site => day_usage
  *   Week:
  *      2) Week site => total_usage_this_week
  *
@@ -31,18 +30,77 @@ var fn = new Fn();
  *          2) x: time, y: site - no group by label: site usage patterns
  *      Week:
  *          3 & 4
+ *
+ * Table:
+ *      1) week top N sites
  */
 
-class TimeTable {
+async function getTimeTable() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'getTimeTable',
+        },
+        response => {
+          res(response.done);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+async function getWatchSites() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'getWatchSites',
+        },
+        response => {
+          res(response.done);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function addWatchSite(url) {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'addWatchSite',
+          url: url,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+class TimeTableData {
+  async init() {
+    this.timeTable = await getTimeTable();
+  }
+
   /**
    *
    * @param {*} day
    * @param {*} timeTable
    * @returns url => total_time
    */
-  getDayUsage(day, timeTable) {
+  getDayUsage(day) {
     const dayUsage = {};
-    Object.entries(timeTable[fn.getDateString(day)])
+    Object.entries(this.timeTable[fn.getDateString(day)])
       .sort((a, b) => b[1]['total'] - a[1]['total'])
       .forEach(day => {
         dayUsage[day[0]] = day[1]['total'] / 60;
@@ -50,12 +108,12 @@ class TimeTable {
     return dayUsage;
   }
 
-  getWeekTotalTime(week, timeTable) {
+  getWeekTotalTime(week) {
     var weekTotal = [0, 0, 0, 0, 0, 0, 0];
     for (var i = 0; i < week.length; i++) {
       const day = week[i];
-      if (day in timeTable) {
-        for (let [_, usage] of Object.entries(timeTable[day])) {
+      if (day in this.timeTable) {
+        for (let [_, usage] of Object.entries(this.timeTable[day])) {
           weekTotal[i] += usage['total'] / 60;
         }
       }
@@ -66,14 +124,13 @@ class TimeTable {
   /**
    *
    * @param {Array} week
-   * @param {Object} timeTable
    * @return {Map} sorted (url => {Number}total_time this week)
    */
-  getSitesWeekTotalUsage(week, timeTable) {
+  getSitesWeekTotalUsage(week) {
     var weekUsage = {}; // url: total_time
     week.forEach(day => {
-      if (timeTable.hasOwnProperty(day)) {
-        for (let [url, usage] of Object.entries(timeTable[day])) {
+      if (this.timeTable.hasOwnProperty(day)) {
+        for (let [url, usage] of Object.entries(this.timeTable[day])) {
           if (typeof url === 'string' && typeof usage['total'] === 'number') {
             if (url in weekUsage && usage['total'] / 60 < 1000) weekUsage[url] += usage['total'] / 60;
             else weekUsage[url] = usage['total'] / 60;
@@ -87,15 +144,14 @@ class TimeTable {
   /**
    *
    * @param {Array} week
-   * @param {Object} timeTable
    * @returns url => [day1_usage, day2_usage ... day7_usage]
    */
-  getSitesWeekUsage(week, timeTable) {
+  getSitesWeekUsage(week) {
     var weekUsage = {};
     for (var i = 0; i < week.length; i++) {
       const day = week[i];
-      if (day in timeTable) {
-        for (let [url, usage] of Object.entries(timeTable[day])) {
+      if (day in this.timeTable) {
+        for (let [url, usage] of Object.entries(this.timeTable[day])) {
           if (typeof url === 'string') {
             if (!(url in weekUsage)) {
               weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
@@ -112,45 +168,28 @@ class TimeTable {
 
   getMonthUsage(month) {
     month = [];
-    for (day in month) month.push(this.timeTable[day]);
+    for (day in month) month.push(this.this.timeTable[day]);
     return month;
   }
 
   /**
    *
-   * @param {string} url
-   * @param {string} day
-   * @returns timeTable[day][url]
-   */
-  getSiteDayUsage(url, day) {
-    return (url = fn.parseDomainFromUrl(url)), (day = fn.getDateString), this.timeTable[day][url];
-  }
-
-  getSiteWeekUsage(site, week) {
-    //return url = fn.parseDomainFromUrl(url), day = fn.getDateString, this.timeTable[day][url];
-  }
-
-  getSiteMonthUsage(site, month) {}
-
-  /**
-   *
    * @param {number} n
    * @param {Array} timeFrame
-   * @param {Object} timeTable
    * @return {Array} [site1, site2 ... site n]
    */
-  getTopNSites(n, timeFrame, timeTable) {
+  getTopNSites(n, timeFrame) {
     if (timeFrame.length == 1) {
-      return Object.keys(timeTable[day])
+      return Object.keys(this.timeTable[day])
         .sort((a, b) => {
-          return timeTable[day][b]['total'] - timeTable[day][a]['total'];
+          return this.timeTable[day][b]['total'] - this.timeTable[day][a]['total'];
         })
         .slice(0, n);
     }
     var timeFrameUsage = {}; // url: total usage this week
     timeFrame.forEach(day => {
-      if (timeTable.hasOwnProperty(day)) {
-        for (let [url, usage] of Object.entries(timeTable[day])) {
+      if (this.timeTable.hasOwnProperty(day)) {
+        for (let [url, usage] of Object.entries(this.timeTable[day])) {
           if (typeof usage['total'] !== 'number') {
             continue;
           }
@@ -173,14 +212,18 @@ class TimeTable {
    *
    * @param {Array} week
    * @param {String} url
-   * @param {Object} timeTable
    * @returns [day1_total_usage, null, day3_total_usage ...]
    */
-  siteWeekTime(week, url, timeTable) {
+  siteWeekTime(week, url) {
     let data = [];
     week.forEach(day => {
-      if (timeTable.hasOwnProperty(day) && timeTable[day].hasOwnProperty(url) && timeTable[day][url].hasOwnProperty('total') && typeof timeTable[day][url]['total'] === 'number') {
-        data.push(timeTable[day][url]['total']);
+      if (
+        this.timeTable.hasOwnProperty(day) &&
+        this.timeTable[day].hasOwnProperty(url) &&
+        this.timeTable[day][url].hasOwnProperty('total') &&
+        typeof this.timeTable[day][url]['total'] === 'number'
+      ) {
+        data.push(this.timeTable[day][url]['total']);
       } else {
         data.push(null);
       }
@@ -191,21 +234,24 @@ class TimeTable {
 }
 
 class WatchSitesData {
+  async init() {
+    this.watchSites = await getWatchSites();
+    this.timeTable = await getTimeTable();
+  }
+
   /**
    *
    * @param {Array} week
-   * @param {Object} timeTable
-   * @param {Array} watchSites
    * @returns urls => [day1_usage, null, day3_usage ...]
    */
-  weekWatchSitesUsage(week, timeTable, watchSites) {
+  weekWatchSitesUsage(week) {
     var weekUsage = {};
-    watchSites.forEach(url => {
+    this.watchSites.forEach(url => {
       for (var i = 0; i < week.length; i++) {
         const day = week[i];
-        if (url in timeTable[day]) {
+        if (url in this.timeTable[day]) {
           if (!(url in weekUsage)) weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
-          weekUsage[url][i] = timeTable[day][url]['total'] / 60;
+          weekUsage[url][i] = this.timeTable[day][url]['total'] / 60;
         }
       }
     });
@@ -215,24 +261,32 @@ class WatchSitesData {
   /**
    *
    * @param {Array} week
-   * @param {Object} timeTable
-   * @param {Array} watchSites
    * @returns {Number} total minutes on watched sites this week
    */
-  weekWatchSitesTotalUsage(week, timeTable, watchSites) {
+  weekWatchSitesTotalUsage(week) {
     var weekUsage = 0;
-    watchSites.forEach(url => {
+    this.watchSites.forEach(url => {
       week.forEach(day => {
-        if (url in timeTable[day]) weekUsage += timeTable[day][url]['total'] / 60;
+        if (url in this.timeTable[day]) weekUsage += this.timeTable[day][url]['total'] / 60;
       });
     });
     return weekUsage;
   }
 }
-const timeTableFunctions = new TimeTable();
-const watchSitesData = new WatchSitesData();
 
 export class ChartData {
+  constructor() {
+    this.today = new Date();
+    this.thisWeek = this.getWeek(this.today);
+  }
+
+  async init() {
+    this.TimeTable = new TimeTableData();
+    this.WatchSites = new WatchSitesData();
+    await this.TimeTable.init();
+    await this.WatchSites.init();
+  }
+
   colors(num_of_colors) {
     var color_palette = [
       '#18e6cf',
@@ -306,12 +360,14 @@ export class ChartData {
   /**
    *
    * @param {boolean} lastWeek - true: get two week's data
-   * @param {*} timeTable
    */
-  weekTotalTimeLineChart(lastWeek, timeTable, today = new Date()) {
+  weekTotalTimeLineChart(lastWeek, date) {
     var datasets = [];
-    const week = this.getWeek(today);
-    const weekTotal = timeTableFunctions.getWeekTotalTime(week, timeTable);
+    if (date == null) {
+      date = new Date();
+    }
+    const week = this.getWeek(date);
+    const weekTotal = this.TimeTable.getWeekTotalTime(week);
     weekTotal[1] = weekTotal[1] / 1000; //todo: delete
     datasets.push({
       label: 'Total Usage This Week',
@@ -321,9 +377,9 @@ export class ChartData {
       fill: lastWeek,
     });
     if (lastWeek) {
-      var date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+      var date = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7);
       const lastWeek = this.getWeek(date);
-      const lastWeekTotal = timeTableFunctions.getWeekTotalTime(lastWeek, timeTable);
+      const lastWeekTotal = this.TimeTable.getWeekTotalTime(lastWeek);
       datasets.push({
         label: `Total Usage Last Week`,
         borderColor: '#bae1ff',
@@ -341,7 +397,7 @@ export class ChartData {
   weekWatchSitesLineChart(timeTable, watchSites, today = new Date()) {
     var datasets = [];
     const week = this.getWeek(today);
-    const weekUsage = watchSitesData.weekWatchSitesUsage(week, timeTable, watchSites);
+    const weekUsage = this.WatchSites.weekWatchSitesUsage(week, timeTable, watchSites);
     const colors = this.colors(Object.keys(weekUsage).length);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
       datasets.push({
@@ -357,6 +413,10 @@ export class ChartData {
     };
   }
 
+  weekSiteUsageLineChart(url) {
+    return this.TimeTable.siteWeekTime(this.thisWeek, url);
+  }
+
   /**
    *
    * @param {Date} date
@@ -367,9 +427,9 @@ export class ChartData {
   weekTopNSitesLineChartData(date, n, timeTable) {
     var sitesUsage = {}; // url: [mon_usage, tues_usage ...]
     const week = this.getWeek(date);
-    const topNSites = timeTableFunctions.getTopNSites(n, week, timeTable);
+    const topNSites = this.TimeTableData.getTopNSites(n, week, timeTable);
     topNSites.forEach(site => {
-      sitesUsage[site] = timeTableFunctions.siteWeekTime(week, site, timeTable);
+      sitesUsage[site] = this.TimeTableData.siteWeekTime(week, site, timeTable);
     });
     var datasets = [];
     for (let [url, time_arr] of Object.entries(sitesUsage))
@@ -590,56 +650,4 @@ export class ChartData {
     };
   }
   monthChartPieData() {}
-}
-
-export async function getTimeTable(cb) {
-  return new Promise((res, rej) => {
-    try {
-      chrome.runtime.sendMessage(
-        {
-          request: 'getTimeTable',
-        },
-        response => {
-          res(response.done);
-        }
-      );
-    } catch (err) {
-      console.log(err);
-    }
-  });
-}
-
-export async function getWatchSites() {
-  return new Promise((res, rej) => {
-    try {
-      chrome.runtime.sendMessage(
-        {
-          request: 'getWatchSites',
-        },
-        response => {
-          res(response.done);
-        }
-      );
-    } catch (err) {
-      rej(err);
-    }
-  });
-}
-
-export async function addWatchSite(url) {
-  return new Promise((res, rej) => {
-    try {
-      chrome.runtime.sendMessage(
-        {
-          request: 'addWatchSite',
-          url: url,
-        },
-        response => {
-          res(response);
-        }
-      );
-    } catch (err) {
-      rej(err);
-    }
-  });
 }

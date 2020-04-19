@@ -1,6 +1,6 @@
 <template>
   <section class="container">
-    <stacked-bar-chart v-if="loaded" :chartdata="StackedBarWeekChartData" />
+    <!-- <stacked-bar-chart v-if="loaded" :chartdata="StackedBarWeekChartData" /> -->
     <!-- <line-chart v-if="loaded" :chartdata="LineChartData" />
     <pie-chart v-if="loaded" :chartdata="PieChartDayData" />
     <pie-chart v-if="loaded" :chartdata="PieChartWeekData" />
@@ -9,6 +9,7 @@
   </section>
 </template>
 <script>
+/*
 import LineChart from './LineChart';
 import PieChart from './PieChart';
 import TimelineChart from './TimelineChart';
@@ -45,4 +46,5 @@ export default {
   },
   components: { LineChart, PieChart, TimelineChart, StackedBarChart },
 };
+*/
 </script>
