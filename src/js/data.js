@@ -27,6 +27,7 @@ var fn = new Fn();
  *      Day:
  *          1) x: time, y: which site   -group by label: today's usage pattern
  *          2) x: time, y: site - no group by label: site usage patterns
+ *          3) x: hour y: watch site - no group by label
  *      Week:
  *          3 & 4
  *
@@ -109,6 +110,78 @@ class TimeTableData {
         dayUsage[day[0]] = Math.floor(day[1]['total'] / 60);
       });
     return dayUsage;
+  }
+
+  /**
+   *
+   * @param {String} day
+   * @param {[Date, Date]} dayFrame
+   * @param {Array} urls
+   * @returns [{ x: facebook.com, y: first_interval}, {x: facebook.com, y: second_interval}]
+   */
+  getDaySiteVisits(day, dayFrame, urls) {
+    const date = fn.getDateString(day);
+    if (!(date in this.timeTable)) return [];
+    var frameStart,
+      frameEnd,
+      isFrame = dayFrame !== null,
+      data = [];
+    if (isFrame) {
+      frameStart = dayFrame[0].getHours();
+      frameEnd = dayFrame[1].getHours();
+    }
+    if (urls !== null) {
+      urls.forEach(url => {
+        if (date in this.timeTable[date] && url in this.timeTable[date] && this.timeTable[date][url]['total'] > 300) {
+          const visits = this.timeTable[date][url]['visits'];
+          visits.forEach(visit => {
+            if (isFrame) {
+              if ((new Date(visit[0]).getHours() < frameEnd || new Date(visit[1]).getHours() > frameStart) && visit[1] - visit[0] > 30 * 1000)
+                data.push({
+                  x: url,
+                  y: visit,
+                });
+            } else {
+              if (visit[1] - visit[0] > 30 * 1000)
+                data.push({
+                  x: url,
+                  y: visit,
+                });
+            }
+          });
+        }
+      });
+    } else {
+      for (let [url, usage] of Object.entries(this.timeTable[date])) {
+        if (usage['total'] > 300) {
+          const visits = usage['visits'];
+          visits.forEach(visit => {
+            if (isFrame) {
+              var visitStart = new Date(visit[0]).getHours(),
+                visitEnd = new Date(visit[1]).getHours();
+              if (
+                visit[1] - visit[0] > 30 * 1000 &&
+                ((visitStart <= frameStart && visitEnd > frameStart) || (visitStart >= frameStart && visitEnd <= frameEnd) || (visitEnd > frameEnd && visitStart < frameEnd))
+              ) {
+                console.log(visitStart, visitEnd, '\t', frameStart, frameEnd);
+                data.push({
+                  x: url,
+                  y: visit,
+                });
+              }
+            } else {
+              if (visit[1] - visit[0] > 30 * 1000)
+                data.push({
+                  x: url,
+                  y: visit,
+                });
+            }
+          });
+        }
+      }
+    }
+    console.log(data);
+    return data;
   }
 
   /**
@@ -249,6 +322,54 @@ class WatchSitesData {
 
   getWatchSites() {
     return this.watchSites;
+  }
+
+  /**
+   *
+   * @param {String} day
+   * @param {[Date, Date]} dayFrame
+   * @param {Array} urls
+   * @returns [{ x: facebook.com, y: first_interval}, {x: facebook.com, y: second_interval}]
+   */
+  getDaySiteVisits(day, dayFrame) {
+    const date = fn.getDateString(day);
+    if (!(date in this.timeTable)) return [];
+    var frameStart,
+      frameEnd,
+      isFrame = dayFrame !== null,
+      data = [];
+    if (isFrame) {
+      frameStart = dayFrame[0].getHours();
+      frameEnd = dayFrame[1].getHours();
+    }
+    this.watchSites.forEach(url => {
+      if (date in this.timeTable && url in this.timeTable[date] && this.timeTable[date][url]['total'] > 300) {
+        const visits = this.timeTable[date][url]['visits'];
+        visits.forEach(visit => {
+          if (isFrame) {
+            var visitStart = new Date(visit[0]).getHours(),
+              visitEnd = new Date(visit[1]).getHours();
+            if (
+              visit[1] - visit[0] > 30 * 1000 &&
+              ((visitStart <= frameStart && visitEnd > frameStart) || (visitStart >= frameStart && visitEnd <= frameEnd) || (visitEnd > frameEnd && visitStart < frameEnd))
+            ) {
+              data.push({
+                x: url,
+                y: visit,
+              });
+            }
+          } else {
+            if (visit[1] - visit[0] > 30 * 1000)
+              data.push({
+                x: url,
+                y: visit,
+              });
+          }
+        });
+      }
+    });
+    console.log(data);
+    return data;
   }
 
   /**
@@ -543,12 +664,12 @@ export class ChartData {
 
   // ============================= Bar charts =========================================
 
-  weekChartBarData(date, timeTable) {
-    if (timeTable == null) {
-      return;
-    }
+  weekChartStackedBarData(date) {
+    if (date == null) date = this.today;
     const week = this.getWeek(date);
-    var weekUsage = timeTableFunctions.getSitesWeekUsage(week, timeTable);
+    week.forEach(day => {
+      const dayUsage = this.TimeTable.getDayUsage();
+    });
     const colors = this.colors(Object.keys(weekUsage).length);
     var datasets = [];
     for (let [url, usageArr] of Object.entries(weekUsage)) {
@@ -572,26 +693,45 @@ export class ChartData {
     };
   }
 
-  daySitesTimeline(day, timeTable) {
-    const date = fn.getDateString(day);
-    var visits = [];
-    for (let [url, usage] of Object.entries(timeTable[date])) {
-      if (usage['total'] > 600) {
-        var data = [];
-        usage['visits'].forEach(interval => {
-          typeof interval === 'object' &&
-            interval[1] - interval[0] > 300 &&
-            data.push({
-              x: date,
-              y: interval,
-            });
-        });
-        visits.push({
-          name: url,
-          data: data,
-        });
-      }
+  // ============================= Timeline Charts =========================================
+  /**
+   *
+   * @param {String} date - defaults to today
+   * @param {[Date, Date]} dayFrame - if specified, show intervals inbetween this frame
+   * @param {Array} urls - if specified, show intervals of specific urls
+   * @param {Boolean} watchSites - if true, show watch sites
+   */
+  daySitesTimeline(date, dayFrame, urls, watchSites) {
+    if (date == null) date = this.today;
+    if (watchSites) {
+      return {
+        name: fn.getDateString(date),
+        data: this.WatchSites.getDaySiteVisits(date, dayFrame),
+      };
     }
+    var data = this.TimeTable.getDaySiteVisits(date, dayFrame, urls);
+    return {
+      name: fn.getDateString(date),
+      data: data,
+    };
+    // var visits = [];
+    // for (let [url, usage] of Object.entries(timeTable[date])) {
+    //     if (usage['total'] > 600) {
+    //         var data = [];
+    //         usage['visits'].forEach(interval => {
+    //             typeof interval === 'object' &&
+    //                 interval[1] - interval[0] > 300 &&
+    //                 data.push({
+    //                     x: date,
+    //                     y: interval,
+    //                 });
+    //         });
+    //         visits.push({
+    //             name: url,
+    //             data: data,
+    //         });
+    //     }
+    // }
     // for (let [url, usage] of Object.entries(timeTable[date])){
     //     if (usage['total'] > 600){
     //         var data = []
@@ -601,7 +741,14 @@ export class ChartData {
     //         visits.push({name: url, data: data})
     //     }
     // }
-    return visits;
+    // return visits;
+  }
+
+  daysSitesTimeline(timeFrame) {
+    let series = [];
+    timeFrame.forEach(day => {
+      series.push(this.daySitesTimeline(day));
+    });
   }
 
   getNewDateByHour(hour, date) {

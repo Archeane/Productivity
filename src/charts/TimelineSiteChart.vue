@@ -1,11 +1,8 @@
 <template>
-  <div class="example">
-    <apexcharts width="500" height="300" type="rangeBar" :options="chartOptions" :series="series"></apexcharts>
-  </div>
+  <apexcharts type="rangeBar" :options="chartOptions" :series="series"></apexcharts>
 </template>
 
 <script>
-
 // top 10 sites of day usage pattern
 import VueApexCharts from 'vue-apexcharts';
 
@@ -14,29 +11,51 @@ export default {
     apexcharts: VueApexCharts,
   },
   props: {
-      chartSeries: {type: Array, default: []}
+    chartSeries: { type: Array, default: [] },
   },
   data: function() {
-      console.log(this.chartSeries);
+    console.log(this.chartSeries);
     return {
       chartOptions: {
         chart: {
+          height: 450,
           type: 'rangeBar',
         },
         plotOptions: {
           bar: {
             horizontal: true,
-            width: '150%',
+            barHeight: '80%',
           },
         },
         xaxis: {
           type: 'datetime',
         },
         stroke: {
-              width: 1
+          width: 1,
+        },
+        fill: {
+          type: 'solid',
+          opacity: 0.6,
+        },
+        legend: {
+          position: 'top',
+          horizontalAlign: 'left',
+        },
+        tooltip: {
+          enabled: true,
+          x: { show: true, format: 'HH:mm' },
+          y: {
+            title: {
+              formatter: function(seriesName) {
+                return '';
+              },
             },
+          },
+          theme: 'dark',
+        },
       },
-      series: this.chartSeries
+      series: [this.chartSeries],
     };
   },
-}
+};
+</script>
