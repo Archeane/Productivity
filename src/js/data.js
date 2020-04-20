@@ -17,6 +17,7 @@ var fn = new Fn();
  *      1) Day site => day_usage
  *   Week:
  *      2) Week site => total_usage_this_week
+ *      3) Half donut site => total_usage_this_week
  *
  *  Bar:
  *      Week:
@@ -475,6 +476,26 @@ export class ChartData {
     return {
       labels: labels,
       series: data,
+    };
+  }
+
+  weekChartHalfDonutData(date, max = 10) {
+    if (date == null) {
+      date = this.today;
+    }
+    const dayUsage = this.TimeTable.getDayUsage(date);
+    let labels = Object.keys(dayUsage).slice(0, max);
+    let data = Object.values(dayUsage).slice(0, max);
+    const colors = this.colors(data.length);
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Today's usage",
+          backgroundColor: colors,
+          data: data,
+        },
+      ],
     };
   }
 

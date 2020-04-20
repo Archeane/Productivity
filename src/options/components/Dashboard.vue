@@ -3,6 +3,7 @@
     <!-- <stacked-bar-chart v-if="loaded" :chartdata="StackedBarWeekChartData" /> -->
     <pie-chart v-if="loaded" :chartSeries="PieChartDaySeries" :chartLabels="PieChartDayLabels" />
     <pie-chart v-if="loaded" :chartSeries="PieChartWeekSeries" :chartLabels="PieChartWeekLabels" />
+    <half-donut-chart v-if="loaded" :chartdata="HalfDonutWeekData" />
     <line-chart v-if="loaded" :chartdata="weekChartData.totalLine" />
     <line-chart v-if="loaded" :chartdata="weekChartData.watchSitesLine" />
     <!-- <line-chart v-if="loaded" :chartdata="weekChartData.sitesLine" /> -->
@@ -11,6 +12,7 @@
 <script>
 import LineChart from '../../charts/LineChart';
 import PieChart from '../../charts/PieChart';
+import HalfDonutChart from '../../charts/HalfDonutChart';
 import StackedBarChart from '../../charts/StackedBarChart';
 import { ChartData, getTimeTable, getWatchSites } from '../../js/data.js';
 
@@ -31,6 +33,7 @@ export default {
     PieChartDayLabels: null,
     PieChartWeekSeries: null,
     PieChartWeekLabels: null,
+    HalfDonutWeekData: null,
     // LineChartData: null,
     // StackedBarWeekChartData: null,
   }),
@@ -46,9 +49,10 @@ export default {
     var PieChartWeekData = chartDataProcessor.weekChartPieData();
     this.PieChartWeekSeries = PieChartWeekData.series;
     this.PieChartWeekLabels = PieChartWeekData.labels;
-
+    this.HalfDonutWeekData = chartDataProcessor.weekChartHalfDonutData();
+    console.log(this.HalfDonutWeekData);
     this.loaded = true;
   },
-  components: { LineChart, PieChart, StackedBarChart },
+  components: { LineChart, PieChart, HalfDonutChart, StackedBarChart },
 };
 </script>
