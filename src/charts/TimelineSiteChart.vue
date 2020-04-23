@@ -11,7 +11,7 @@ export default {
     apexcharts: VueApexCharts,
   },
   props: {
-    chartSeries: { type: Array, default: [] },
+    chartSeries: { type: Object, default: [] },
   },
   data: function() {
     console.log(this.chartSeries);

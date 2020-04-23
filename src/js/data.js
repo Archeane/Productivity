@@ -28,12 +28,12 @@ var fn = new Fn();
  *          1) x: time, y: which site   -group by label: today's usage pattern
  *          2) x: time, y: site - no group by label: site usage patterns
  *          3) x: hour y: watch site - no group by label
- *      Week:
- *          3 & 4
+ *
+ * Scatter:
+ *      1) x - day, y - site. point = single entry
  *
  * Table:
- *      1) week top N usage sites
- *      2) top N frequency sites
+ *      1) week usage & freuqncy
  */
 
 async function getTimeTable() {
@@ -180,7 +180,6 @@ class TimeTableData {
         }
       }
     }
-    console.log(data);
     return data;
   }
 
@@ -225,6 +224,27 @@ class TimeTableData {
   /**
    *
    * @param {Array} week
+   * @return {Map} (url => total visits this week)
+   */
+  getSitesWeekTotalFrequencyUsage(week) {
+    var urlUsage = {};
+    week.forEach(day => {
+      if (!(day in this.timeTable)) return;
+      for (let [url, usage] of Object.entries(this.timeTable[day])) {
+        if (!(url in urlUsage))
+          urlUsage[url] = {
+            total: 0,
+            frequency: 0,
+          };
+        (urlUsage[url]['total'] += Math.floor(usage['total'] / 60)), (urlUsage[url]['frequency'] += usage['visits'].length);
+      }
+    });
+    return urlUsage;
+  }
+
+  /**
+   *
+   * @param {Array} week
    * @returns url => [day1_usage, day2_usage ... day7_usage]
    */
   getSitesWeekUsage(week) {
@@ -253,13 +273,41 @@ class TimeTableData {
     return month;
   }
 
+  getSiteDayVisits(day, url) {
+    if (!(day in this.timeTable) || !(url in this.timeTable[day])) return [];
+    return this.timeTable[day][url]['visits'];
+  }
+
+  /**
+   *
+   * @param {String} day
+   * @returns  [{timeRange: [entry, exit], val: url}]
+   */
+  getDayVisits(date) {
+    if (!(date in this.timeTable)) return [];
+    var visits = [];
+    for (let [url, usage] of Object.entries(this.timeTable[date])) {
+      if (usage['total'] > 600) {
+        usage['visits'].forEach(interval => {
+          typeof interval === 'object' &&
+            interval[1] - interval[0] > 100 * 1000 &&
+            visits.push({
+              timeRange: [new Date(interval[0]), new Date(interval[1])],
+              val: url,
+            });
+        });
+      }
+    }
+    return visits;
+  }
+
   /**
    *
    * @param {number} n
    * @param {Array} timeFrame
    * @return {Array} [site1, site2 ... site n]
    */
-  getTopNSites(n, timeFrame) {
+  topNUsageSites(n, timeFrame) {
     if (timeFrame.length == 1) {
       return Object.keys(this.timeTable[day])
         .sort((a, b) => {
@@ -269,16 +317,40 @@ class TimeTableData {
     }
     var timeFrameUsage = {}; // url: total usage this week
     timeFrame.forEach(day => {
-      if (this.timeTable.hasOwnProperty(day)) {
+      if (!(day in this.timeTable)) return;
+      for (let [url, usage] of Object.entries(this.timeTable[day])) {
+        if (typeof usage['total'] !== 'number') continue;
+        if (!(url in timeFrameUsage)) timeFrameUsage[url] = 0;
+        timeFrameUsage[url] += usage['total'];
+      }
+    });
+    return Object.keys(timeFrameUsage)
+      .sort((a, b) => {
+        return timeFrameUsage[b] - timeFrameUsage[a];
+      })
+      .slice(0, n);
+  }
+
+  /**
+   *
+   * @param {Number} n
+   * @param {Array} timeFrame
+   * @returns sorted by visit frequency [url1, url2 .. urln]
+   */
+  topNFrequentSites(n, timeFrame) {
+    if (timeFrame.length == 1) {
+      return Object.keys(this.timeTable[timeFrame[0]])
+        .sort((a, b) => {
+          return this.timeTable[day][b]['visits'].length - this.timeTable[day][a]['visits'].length;
+        })
+        .slice(0, n);
+    }
+    var timeFrameUsage = {}; // url: total usage this week
+    timeFrame.forEach(day => {
+      if (day in this.timeTable) {
         for (let [url, usage] of Object.entries(this.timeTable[day])) {
-          if (typeof usage['total'] !== 'number') {
-            continue;
-          }
-          if (timeFrameUsage.hasOwnProperty(url)) {
-            timeFrameUsage[url] += usage['total'];
-          } else {
-            timeFrameUsage[url] = usage['total'];
-          }
+          if (!(url in timeFrameUsage)) timeFrameUsage[url] = 0;
+          timeFrameUsage[url] += usage['visits'].length;
         }
       }
     });
@@ -817,22 +889,9 @@ export class ChartData {
     return intByHours;
   }
 
-  dayTimeline(day, timeTable) {
+  dayTimeline(day = this.today) {
     const date = fn.getDateString(day);
-    var visits = [];
-    for (let [url, usage] of Object.entries(timeTable[date])) {
-      if (usage['total'] > 600) {
-        usage['visits'].forEach(interval => {
-          typeof interval === 'object' &&
-            interval[1] - interval[0] > 100 * 1000 &&
-            visits.push({
-              timeRange: [new Date(interval[0]), new Date(interval[1])],
-              val: url,
-            });
-        });
-      }
-    }
-
+    const visits = this.TimeTable.getDayVisits(date);
     var intByHour = this.breakDayToHoursIntervals(visits);
     return intByHour;
     return [
@@ -848,6 +907,58 @@ export class ChartData {
     ];
   }
 
+  // ============================= Table =========================================
+
+  weekSitesUsageFrequency(date = this.today) {
+    const urlUsage = this.TimeTable.getSitesWeekTotalFrequencyUsage(this.getWeek(date));
+    var data = [];
+    for (let [url, usage] of Object.entries(urlUsage)) {
+      data.push({
+        name: url,
+        total: usage['total'],
+        frequency: usage['frequency'],
+        timePerVist: Math.round((usage['total'] * 100) / usage['frequency']) / 100,
+      });
+    }
+    return data;
+  }
+
+  // ============================= Scatter =========================================
+  weekSiteVisitScatter(date, urls, watchSites) {
+    if (date == null) date = this.today;
+    var fetchUrls;
+    if (watchSites) fetchUrls = this.WatchSites.getWatchSites();
+    if (urls) fetchUrls = urls;
+    const week = this.getWeek(date);
+    let urlVisits = {}; // url => [[4-20-2020, 1580153151321]...]
+    fetchUrls.forEach(url => {
+      urlVisits[url] = [];
+      week.forEach(day => {
+        const dayVisits = this.TimeTable.getSiteDayVisits(day, url);
+        for (var i = 0; i < dayVisits.length; i++) {
+          typeof dayVisits[i][0] === 'number' && urlVisits[url].push({ x: new Date(day).getTime(), y: new Date(dayVisits[i][0]) });
+        }
+      });
+    });
+    var data = [];
+    const colors = this.colors(fetchUrls.length);
+    for (let [url, dataObj] of Object.entries(urlVisits)) {
+      // data.push({name: url, data: dataObj})    apex
+      data.push({ label: url, borderColor: colors.pop(), data: dataObj });
+    }
+    return {
+      datasets: data,
+    };
+  }
+
+  weekTopNFrequentSites(n = 10, date = this.today) {
+    return this.TimeTable.topNFrequentSites(n, this.getWeek(date));
+  }
+
+  weekTopNUsageSites(n = 10, date = this.today) {
+    return this.TimeTable.topNUsageSites(n, this.getWeek(date));
+  }
+
   /**
    *
    * @param {Date} date
@@ -858,7 +969,7 @@ export class ChartData {
   weekTopNSitesLineChartData(date, n, timeTable) {
     var sitesUsage = {}; // url: [mon_usage, tues_usage ...]
     const week = this.getWeek(date);
-    const topNSites = this.TimeTableData.getTopNSites(n, week, timeTable);
+    const topNSites = this.TimeTableData.topNUsageSites(n, week);
     topNSites.forEach(site => {
       sitesUsage[site] = this.TimeTableData.siteWeekTime(week, site, timeTable);
     });
