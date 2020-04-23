@@ -1,21 +1,26 @@
 <script>
 import { Bar } from 'vue-chartjs';
 import Chart from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 export default {
   extends: Bar,
   props: {
     chartdata: { type: Object, default: null },
-    options: {
-      default: {
+  },
+  data: () => {
+    return {
+      options: {
         legend: {
-          display: true,
+          display: false,
         },
         tooltips: {
           mode: 'label',
           callbacks: {
             label: function(t, d) {
-              return t.yLabel;
+              if (t.yLabel != 0) {
+                return d.datasets[t.datasetIndex].label + ':  ' + t.yLabel + ' mins';
+              }
             },
           },
         },
@@ -36,7 +41,7 @@ export default {
           ],
         },
       },
-    },
+    };
   },
   mounted() {
     this.renderChart(this.chartdata, this.options);

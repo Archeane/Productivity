@@ -9,11 +9,11 @@ import Dashboard from './components/Dashboard';
 new Vue({
   el: '#app',
   components: {
-    Dashboard
+    Dashboard,
   },
   vuetify: new Vuetify({
     theme: {
-      dark: true,
+      dark: false,
     },
   }),
 });

@@ -10,21 +10,26 @@ export default {
   },
   props: {
     chartdata: { type: Object, default: null },
-    options: {
-      // Chart.defaults.Doughnut
-      default: {
+  },
+  data: () => {
+    // Chart.defaults.Doughnut
+    return {
+      options: {
         plugins: {
           datalabels: {
             formatter: function(value, context) {
-              var label = context.chart.data.labels[context.dataIndex];
+              var label = context.chart.data.labels[context.dataIndex].replace(/([.]\w+)$/, '').replace(/^www\./, '');
               var minutes = context.dataset.data[context.dataIndex];
               var percentage =
                 (minutes * 100) /
                 context.dataset.data.reduce((a, b) => {
                   return a + b;
                 });
-              if (percentage > 10) return [label, minutes + ' mins'];
-              else return label;
+              if (percentage > 10) {
+                var h = (minutes / 60) | 0,
+                  m = minutes % 60 | 0;
+                return [label, `${h} hrs ${m} mins`];
+              } else return label;
             },
           },
         },
@@ -52,15 +57,15 @@ export default {
               });
               //get the current items value
               var currentValue = dataset.data[tooltipItem.index];
-              //calculate the precentage based on the total and current item, also this does a rough rounding to give a whole number
               var percentage = Math.floor((currentValue / total) * 100 + 0.5);
-
-              return [currentValue + ' mins , \t' + percentage + '%'];
+              var h = (currentValue / 60) | 0,
+                m = currentValue % 60 | 0;
+              return [`${h} hrs ${m} mins | ${percentage} %`];
             },
           },
         },
       },
-    },
+    };
   },
   mounted() {
     this.renderChart(this.chartdata, this.options);

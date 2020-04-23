@@ -95,19 +95,28 @@ class TimeTableData {
 
   /**
    *
+   * @param {String} day 2020-04-20
+   * @returns timeTable[day]
+   */
+  getDayUsage(day) {
+    return day in this.timeTable ? this.timeTable[day] : {};
+  }
+
+  /**
+   *
    * @param {*} day
    * @param {*} timeTable
    * @returns sorted url => total_time_today
    */
-  getDayUsage(day) {
-    if (!(fn.getDateString(day) in this.timeTable)) {
+  getDayUsageSorted(day) {
+    if (!(day in this.timeTable)) {
       return {};
     }
     const dayUsage = {};
-    Object.entries(this.timeTable[fn.getDateString(day)])
+    Object.entries(this.timeTable[day])
       .sort((a, b) => b[1]['total'] - a[1]['total'])
-      .forEach(day => {
-        dayUsage[day[0]] = Math.floor(day[1]['total'] / 60);
+      .forEach((url, usage) => {
+        dayUsage[url] = Math.floor(usage['total'] / 60);
       });
     return dayUsage;
   }
@@ -189,7 +198,7 @@ class TimeTableData {
    * @returns {Array} [day1_total, 0, day3_total...]
    */
   getWeekTotalTime(week) {
-    var weekTotal = [0, 0, 0, 0, 0, 0, 0];
+    var weekTotal = [null, null, null, null, null, null, null];
     for (var i = 0; i < week.length; i++) {
       const day = week[i];
       if (day in this.timeTable) {
@@ -378,7 +387,7 @@ class TimeTableData {
       ) {
         data.push(Math.floor(this.timeTable[day][url]['total'] / 60));
       } else {
-        data.push(null);
+        data.push(0);
       }
     });
     return data;
@@ -573,12 +582,11 @@ export class ChartData {
     }
     const week = this.getWeek(date);
     const weekTotal = this.TimeTable.getWeekTotalTime(week);
-    weekTotal[1] = weekTotal[1] / 1000; //todo: delete
     datasets.push({
       label: 'Total Usage This Week',
-      borderColor: '#ffb3ba',
+      borderColor: '#ff7f7f',
       data: weekTotal,
-      backgroundColor: '#ffb3ba',
+      backgroundColor: '#444444',
       fill: lastWeek,
     });
     if (lastWeek) {
@@ -648,7 +656,7 @@ export class ChartData {
     if (date == null) {
       date = this.today;
     }
-    const dayUsage = this.TimeTable.getDayUsage(date);
+    const dayUsage = this.TimeTable.getDayUsageSorted(date);
     let labels = Object.keys(dayUsage).slice(0, max);
     let data = Object.values(dayUsage).slice(0, max);
     return {
@@ -677,12 +685,11 @@ export class ChartData {
   }
 
   weekChartHalfDonutData(date, max = 10) {
-    if (date == null) {
-      date = this.today;
-    }
-    const dayUsage = this.TimeTable.getDayUsage(date);
-    let labels = Object.keys(dayUsage).slice(0, max);
-    let data = Object.values(dayUsage).slice(0, max);
+    if (date == null) date = this.today;
+    const week = this.getWeek(date);
+    const weekUsage = this.TimeTable.getSitesWeekTotalUsage(week);
+    let labels = [...weekUsage.keys()].slice(0, max);
+    let data = [...weekUsage.values()].slice(0, max);
     const colors = this.colors(data.length);
     return {
       labels: labels,
@@ -739,23 +746,51 @@ export class ChartData {
   weekChartStackedBarData(date) {
     if (date == null) date = this.today;
     const week = this.getWeek(date);
-    week.forEach(day => {
-      const dayUsage = this.TimeTable.getDayUsage();
-    });
+    let weekUsage = {};
+    let weekTotalTime = 0;
+    let dayTotalTimes = [0, 0, 0, 0, 0, 0, 0];
+    for (var i = 0; i < week.length; i++) {
+      const dayUsage = this.TimeTable.getDayUsage(week[i]);
+      for (let [url, usage] of Object.entries(dayUsage)) {
+        if (!(url in weekUsage)) weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
+        const total = Math.floor(usage['total'] / 60);
+        weekUsage[url][i] = total;
+        weekTotalTime += total;
+        dayTotalTimes[i] += total;
+      }
+    }
     const colors = this.colors(Object.keys(weekUsage).length);
-    var datasets = [];
+    let datasets = [];
+    const weekMinutesThreshold = Math.floor(weekTotalTime / 100);
+    const daysThreshold = Math.floor(moment(date).day() / 3);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
       const totalUsage = usageArr.reduce((a, b) => a + b, 0);
       if (
-        totalUsage > 300 &&
+        totalUsage > weekMinutesThreshold &&
         usageArr.filter(x => {
           return x !== 0;
-        }).length > 1
+        }).length > daysThreshold &&
+        usageArr.every((e, i) => {
+          if (e != 0 && e < Math.floor(dayTotalTimes[i] / 100) * 2.5) {
+            usageArr[i] = 0;
+          }
+          return true;
+        })
       ) {
         datasets.push({
           label: url,
           backgroundColor: colors.pop() || 'RED',
           data: usageArr,
+          datalabels: {
+            formatter: function(value, context) {
+              if (value > 1) {
+                const url = context.dataset.label;
+                return url.replace(/([.]\w+)$/, '').replace(/^www\./, '');
+              } else {
+                return '';
+              }
+            },
+          },
         });
       }
     }
