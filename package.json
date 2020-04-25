@@ -32,6 +32,7 @@
     "vue": "^2.6.10",
     "vue-apexcharts": "^1.5.3",
     "vue-chartjs": "^3.5.0",
+    "vue-router": "^3.1.6",
     "vuetify": "^2.2.22"
   },
   "devDependencies": {
