@@ -486,6 +486,27 @@ class WatchSitesData {
     });
     return weekUsage;
   }
+
+  /**
+   *
+   * @param {Array} week
+   * @returns sorted url => total time
+   */
+  weekTopWatchSites(week) {
+    var weekUsage = {};
+    this.watchSites.forEach(url => {
+      for (var i = 0; i < week.length; i++) {
+        const day = week[i];
+        if (day in this.timeTable && url in this.timeTable[day]) {
+          if (!(url in weekUsage)) weekUsage[url] = 0;
+          weekUsage[url] += Math.floor(this.timeTable[day][url]['total'] / 60);
+        }
+      }
+    });
+    return Object.entries(weekUsage).sort(function(a, b) {
+      return weekUsage[b] - weekUsage[a];
+    });
+  }
 }
 
 export class ChartData {
@@ -603,6 +624,17 @@ export class ChartData {
       return a + b;
     });
   }
+
+  topWatchSites(start, end) {
+    const timeFrame = this.getTimeFrame(start, end);
+    return this.WatchSites.weekTopWatchSites(timeFrame);
+  }
+
+  timeFrameWatchSitesTotalUsage(start, end) {
+    const timeFrame = this.getTimeFrame(start, end);
+    return this.WatchSites.weekWatchSitesTotalUsage(timeFrame);
+  }
+
   // =============================Line charts =========================================
   /**
    *
@@ -739,6 +771,25 @@ export class ChartData {
     };
   }
 
+  timeFrameWatchSitesHalfDonut(start, end, max = 10) {
+    const week = this.getTimeFrame(start, end);
+    const weekUsage = this.WatchSites.weekTopWatchSites(week);
+    console.log(weekUsage);
+    let labels = weekUsage.map(x => x[0]).slice(0, max);
+
+    let data = weekUsage.map(x => x[1]).slice(0, max);
+    const colors = this.colors(data.length);
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Today's usage",
+          backgroundColor: colors,
+          data: data,
+        },
+      ],
+    };
+  }
   // ============================= Radar charts =========================================
   /**
    *
