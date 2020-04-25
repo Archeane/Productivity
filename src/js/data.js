@@ -198,7 +198,7 @@ class TimeTableData {
    * @returns {Array} [day1_total, 0, day3_total...]
    */
   getWeekTotalTime(week) {
-    var weekTotal = [null, null, null, null, null, null, null];
+    var weekTotal = [...Array(week.length)].fill(0);
     for (var i = 0; i < week.length; i++) {
       const day = week[i];
       if (day in this.timeTable) {
@@ -570,6 +570,39 @@ export class ChartData {
     return week;
   }
 
+  /**
+   *
+   * @param {Number/Date} start
+   * @param {Number/Date} end
+   * if start & end are dates, return all dates from start to end
+   * else return dates range [today+start, today+end]
+   */
+  getTimeFrame(start, end) {
+    var dates = [],
+      currDate,
+      lastDate;
+    if (typeof end === 'number' && typeof start === 'number') {
+      if (start < 0) currDate = moment().subtract(-1 * start, 'd');
+      if (start > 0) currDate = moment().add(start, 'd');
+      if (end < 0) lastDate = moment().subtract(-1 * end, 'd');
+      if (end > 0) lastDate = moment().add(end, 'd');
+      if (start == 0) (currDate = moment()), lastDate.subtract(1, 'd');
+      if (end == 0) (lastDate = moment()), currDate.add(1, 'd');
+      while (!currDate.isSame(lastDate, 'date')) {
+        dates.push(currDate.clone().format('YYYY-MM-DD'));
+        currDate.add(1, 'd');
+      }
+      dates.push(lastDate.format('YYYY-MM-DD'));
+    }
+    return dates;
+  }
+
+  timeFrameTotalTime(start, end) {
+    const timeFrame = this.getTimeFrame(start, end);
+    return this.TimeTable.getWeekTotalTime(timeFrame).reduce((a, b) => {
+      return a + b;
+    });
+  }
   // =============================Line charts =========================================
   /**
    *
@@ -650,6 +683,10 @@ export class ChartData {
   monthSitesLineChartData() {}
   monthTotalTimeLineChart() {}
 
+  timeFrameVisitedSites(start, end) {
+    const timeFrame = this.getTimeFrame(start, end);
+    return this.TimeTable.topNUsageSites(-1, timeFrame);
+  }
   // ============================= Pie charts =========================================
 
   dayChartPieData(date, max = 15) {
@@ -684,9 +721,8 @@ export class ChartData {
     };
   }
 
-  weekChartHalfDonutData(date, max = 10) {
-    if (date == null) date = this.today;
-    const week = this.getWeek(date);
+  weekChartHalfDonutData(start, end, max = 10) {
+    const week = this.getTimeFrame(start, end);
     const weekUsage = this.TimeTable.getSitesWeekTotalUsage(week);
     let labels = [...weekUsage.keys()].slice(0, max);
     let data = [...weekUsage.values()].slice(0, max);
@@ -743,14 +779,20 @@ export class ChartData {
 
   // ============================= Bar charts =========================================
 
-  weekChartStackedBarData(date) {
-    if (date == null) date = this.today;
-    const week = this.getWeek(date);
+  /**
+   *
+   * @param {Number} start
+   * @param {Number} end
+   * end - start <= 7
+   * @return day -> {url: total time on the day} filtered
+   */
+  siteUsageStackedBarData(start, end) {
+    const timeFrame = this.getTimeFrame(start, end);
     let weekUsage = {};
     let weekTotalTime = 0;
     let dayTotalTimes = [0, 0, 0, 0, 0, 0, 0];
-    for (var i = 0; i < week.length; i++) {
-      const dayUsage = this.TimeTable.getDayUsage(week[i]);
+    for (var i = 0; i < timeFrame.length; i++) {
+      const dayUsage = this.TimeTable.getDayUsage(timeFrame[i]);
       for (let [url, usage] of Object.entries(dayUsage)) {
         if (!(url in weekUsage)) weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
         const total = Math.floor(usage['total'] / 60);
@@ -762,7 +804,7 @@ export class ChartData {
     const colors = this.colors(Object.keys(weekUsage).length);
     let datasets = [];
     const weekMinutesThreshold = Math.floor(weekTotalTime / 100);
-    const daysThreshold = Math.floor(moment(date).day() / 3);
+    const daysThreshold = Math.floor((end - start) / 3);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
       const totalUsage = usageArr.reduce((a, b) => a + b, 0);
       if (
@@ -795,7 +837,7 @@ export class ChartData {
       }
     }
     return {
-      labels: week,
+      labels: timeFrame,
       datasets: datasets,
     };
   }
@@ -971,7 +1013,11 @@ export class ChartData {
       week.forEach(day => {
         const dayVisits = this.TimeTable.getSiteDayVisits(day, url);
         for (var i = 0; i < dayVisits.length; i++) {
-          typeof dayVisits[i][0] === 'number' && urlVisits[url].push({ x: new Date(day).getTime(), y: new Date(dayVisits[i][0]) });
+          typeof dayVisits[i][0] === 'number' &&
+            urlVisits[url].push({
+              x: new Date(day).getTime(),
+              y: new Date(dayVisits[i][0]),
+            });
         }
       });
     });
@@ -979,7 +1025,11 @@ export class ChartData {
     const colors = this.colors(fetchUrls.length);
     for (let [url, dataObj] of Object.entries(urlVisits)) {
       // data.push({name: url, data: dataObj})    apex
-      data.push({ label: url, borderColor: colors.pop(), data: dataObj });
+      data.push({
+        label: url,
+        borderColor: colors.pop(),
+        data: dataObj,
+      });
     }
     return {
       datasets: data,

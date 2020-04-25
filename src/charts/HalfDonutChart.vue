@@ -33,6 +33,9 @@ export default {
             },
           },
         },
+        legend: {
+          display: false,
+        },
         responsive: true,
         animation: {
           animateScale: true,
