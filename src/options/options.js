@@ -6,6 +6,7 @@ import Vuetify from 'vuetify';
 
 import Dashboard from './components/Dashboard';
 import WatchSitesOverview from './components/WatchSitesOverview';
+import WatchSitesDetails from './components/WatchSitesDetails';
 /* eslint-disable no-new */
 
 Vue.use(VueRouter);
@@ -17,6 +18,10 @@ const routes = [
   {
     path: '/watchsitesoverview',
     component: WatchSitesOverview,
+  },
+  {
+    path: '/watchsitesdetails',
+    component: WatchSitesDetails,
   },
 ];
 const router = new VueRouter({

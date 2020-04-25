@@ -58,44 +58,14 @@
       :visitedSites="monthVisitedSites"
     />
   </v-container>
-  <!-- <v-card
-      class="mx-auto"
-      max-width="800"
-      raised=true
-        >
-        <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
-            <v-tab :key="weekTotalLine">Total time</v-tab>
-            <v-tab :key="weekWatchLine">Watch sites time</v-tab>
-            <v-tab :key="weekSitesLine">Specific sites</v-tab>
-            <v-btn-toggle
-                v-model="toggle_exclusive"
-                color="primary"
-                mandatory>
-                <v-btn :value="1" text>
-                    week
-                </v-btn>
-                <v-btn :value="2" text>
-                    month
-                </v-btn>
-            </v-btn-toggle>
-            <v-tab-item :key="weekTotalLine">
-                <v-container fluid>
-                <line-chart v-if="loaded" :chartdata="weekChartData.totalLine" />
-                </v-container>
-            </v-tab-item>
-            <v-tab-item :key="weekWatchLine">
-                <v-container fluid>
-                <line-chart v-if="loaded" :chartdata="weekChartData.watchSitesLine" />
-                </v-container>
-            </v-tab-item>
-            <v-tab-item :key="weekSitesLine">
-                <v-container fluid>
-                <line-chart v-if="loaded" :chartdata="weekChartData.sitesLine" />
-                </v-container>
-            </v-tab-item>
-        </v-tabs>
-  </v-card>-->
-
+  <!-- <v-card>
+      <v-card-title>
+        Usage Stats Week of {{ new Date().getMonth() }}
+        <v-spacer></v-spacer>
+        <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
+      </v-card-title>
+      <v-data-table v-if="loaded" :headers="tableHeaders" :items="weekChartData.usageFrequencyTable" :search="search" multi-sort class="elevation-1"></v-data-table>
+    </v-card>-->
   <!-- <timeline-chart v-if="loaded" :data="TimelineChart" /> -->
   <!-- <timeline-site-chart v-if="loaded" :chartSeries="SitesIntervals" /> -->
   <!-- <radar-chart v-if="loaded" :chartdata="weekChartData.watchSitesRadar" /> -->

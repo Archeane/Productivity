@@ -507,6 +507,48 @@ class WatchSitesData {
       return weekUsage[b] - weekUsage[a];
     });
   }
+
+  /**
+   *
+   * @param {Array} time frame
+   * @return {Map} (url => {total: , frequency:, timeBtwVisits:,})
+   */
+  getTimeFrameTotalFrequencyUsage(week) {
+    var urlUsage = {};
+
+    this.watchSites.forEach(url => {
+      var days = 0;
+      week.forEach(day => {
+        if (!(day in this.timeTable)) return;
+        if (!(url in this.timeTable[day])) return;
+        if (!(url in urlUsage))
+          urlUsage[url] = {
+            total: 0,
+            frequency: 0,
+            timeBtwVisit: 0,
+          };
+        const usage = this.timeTable[day][url];
+        urlUsage[url]['total'] += Math.floor(usage['total'] / 60);
+        var totalIntervalTime = 0,
+          freq = 0;
+        for (var i = 1; i < usage['visits'].length; i++) {
+          if (typeof usage['visits'][i] !== 'number' && typeof usage['visits'][i - 1] !== 'number') {
+            var s = usage['visits'][i - 1][1],
+              e = usage['visits'][i][0];
+            if (e - s > 60 * 1000) (totalIntervalTime += e - s), (freq += 1);
+          }
+        }
+        if (freq > 0 && totalIntervalTime != null) {
+          urlUsage[url]['timeBtwVisit'] += totalIntervalTime / (1000 * freq);
+          urlUsage[url]['frequency'] += freq;
+        }
+        // console.log(`${day}, ${url}, seconds btw visit: ${urlUsage[url]['timeBtwVisit']}, visits.length: ${usage['visits'].length}, totalIntervaltime: ${totalIntervalTime}, freq: ${freq}`)
+        days += 1;
+      });
+      urlUsage[url]['timeBtwVisit'] /= days;
+    });
+    return urlUsage;
+  }
 }
 
 export class ChartData {
@@ -1046,6 +1088,23 @@ export class ChartData {
         total: usage['total'],
         frequency: usage['frequency'],
         timePerVist: Math.round((usage['total'] * 100) / usage['frequency']) / 100,
+      });
+    }
+    return data;
+  }
+
+  timeFrameWatchSitesUsageFrequency(start, end) {
+    const timeFrame = this.getTimeFrame(start, end);
+    const urlUsage = this.WatchSites.getTimeFrameTotalFrequencyUsage(timeFrame);
+    var data = [];
+    for (let [url, usage] of Object.entries(urlUsage)) {
+      data.push({
+        name: url,
+        total: usage['total'],
+        frequency: usage['frequency'],
+        timePerVist: Math.round((usage['total'] * 100) / usage['frequency']) / 100,
+        freqDay: Math.round(usage['frequency'] / timeFrame.length),
+        timeBtwVisit: Math.round(usage['timeBtwVisit'] / 60),
       });
     }
     return data;
