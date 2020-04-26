@@ -7,12 +7,13 @@ import Vuetify from 'vuetify';
 import Dashboard from './components/Dashboard';
 import WatchSitesOverview from './components/WatchSitesOverview';
 import WatchSitesDetails from './components/WatchSitesDetails';
+import UsagePattern from './components/UsagePattern';
 /* eslint-disable no-new */
 
 Vue.use(VueRouter);
 const routes = [
   {
-    path: '/dashboard',
+    path: '/',
     component: Dashboard,
   },
   {
@@ -23,11 +24,15 @@ const routes = [
     path: '/watchsitesdetails',
     component: WatchSitesDetails,
   },
+  {
+    path: '/usagepattern',
+    component: UsagePattern,
+  },
 ];
 const router = new VueRouter({
   routes,
 });
-new Vue({
+var vm = new Vue({
   el: '#app',
   router: router,
   vuetify: new Vuetify({
@@ -36,3 +41,4 @@ new Vue({
     },
   }),
 });
+global.vm = vm;

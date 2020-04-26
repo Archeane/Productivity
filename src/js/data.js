@@ -302,7 +302,7 @@ class TimeTableData {
             interval[1] - interval[0] > 100 * 1000 &&
             visits.push({
               timeRange: [new Date(interval[0]), new Date(interval[1])],
-              val: url,
+              val: url.replace(/([.]\w+)$/, '').replace(/^www\./, ''),
             });
         });
       }
@@ -1006,53 +1006,69 @@ export class ChartData {
     for (let intervalObj of intervals) {
       let interval = intervalObj['timeRange'];
       if (interval[0].getHours() == currentHour && interval[1].getHours() > currentHour) {
-        intByHours[currentHour].push({
-          timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
-          val: intervalObj['val'],
-        });
-        currentHour += 1;
-        while (interval[1].getHours() > currentHour) {
+        if (currentHour < intByHours.length) {
           intByHours[currentHour].push({
-            timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+            timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
             val: intervalObj['val'],
           });
+        }
+        currentHour += 1;
+        while (interval[1].getHours() > currentHour) {
+          if (currentHour < intByHours.length) {
+            intByHours[currentHour].push({
+              timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+              val: intervalObj['val'],
+            });
+          }
           currentHour += 1;
         }
-        intByHours[currentHour].push({
-          timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
-          val: intervalObj['val'],
-        });
+        if (currentHour < intByHours.length) {
+          intByHours[currentHour].push({
+            timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
+            val: intervalObj['val'],
+          });
+        }
       } else if (interval[0].getHours() == currentHour && interval[1].getHours() == currentHour) {
-        intByHours[currentHour].push({
-          timeRange: [interval[0], interval[1]],
-          val: intervalObj['val'],
-        });
+        if (currentHour < intByHours.length) {
+          intByHours[currentHour].push({
+            timeRange: [interval[0], interval[1]],
+            val: intervalObj['val'],
+          });
+        }
       } else if (interval[0].getHours() > currentHour) {
         while (interval[0].getHours() > currentHour) {
           currentHour += 1;
         }
         if (interval[1].getHours() == currentHour) {
-          intByHours[currentHour].push({
-            timeRange: [interval[0], interval[1]],
-            val: intervalObj['val'],
-          });
-        } else {
-          intByHours[currentHour].push({
-            timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
-            val: intervalObj['val'],
-          });
-          currentHour += 1;
-          while (interval[1].getHours() > currentHour) {
+          if (currentHour < intByHours.length) {
             intByHours[currentHour].push({
-              timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+              timeRange: [interval[0], interval[1]],
               val: intervalObj['val'],
             });
+          }
+        } else {
+          if (currentHour < intByHours.length) {
+            intByHours[currentHour].push({
+              timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
+              val: intervalObj['val'],
+            });
+          }
+          currentHour += 1;
+          while (interval[1].getHours() > currentHour) {
+            if (currentHour < intByHours.length) {
+              intByHours[currentHour].push({
+                timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+                val: intervalObj['val'],
+              });
+            }
             currentHour += 1;
           }
-          intByHours[currentHour].push({
-            timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
-            val: intervalObj['val'],
-          });
+          if (currentHour < intByHours.length) {
+            intByHours[currentHour].push({
+              timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
+              val: intervalObj['val'],
+            });
+          }
         }
       }
     }
@@ -1060,7 +1076,7 @@ export class ChartData {
   }
 
   dayTimeline(day = this.today) {
-    const date = fn.getDateString(day);
+    const date = moment(day).format('YYYY-MM-DD');
     const visits = this.TimeTable.getDayVisits(date);
     var intByHour = this.breakDayToHoursIntervals(visits);
     return intByHour;
