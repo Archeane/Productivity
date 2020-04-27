@@ -28,8 +28,8 @@
               <v-card-title>Total Time Online</v-card-title>
             </v-col>
             <v-col cols="4">
-              <v-checkbox v-model="select.weeksRadar" label="Last Week" value="2" v-on:change="fetchWeeksRadar"></v-checkbox>
-              <v-checkbox v-model="select.weeksRadar" label="Last last week" value="3" v-on:change="fetchWeeksRadar"></v-checkbox>
+              <v-checkbox v-model="weeksRadarSelect" label="Last Week" value="2" v-on:change="fetchWeeksRadar"></v-checkbox>
+              <v-checkbox v-model="weeksRadarSelect" label="Last last week" value="3" v-on:change="fetchWeeksRadar"></v-checkbox>
             </v-col>
           </v-row>
           <v-divider></v-divider>
@@ -38,7 +38,10 @@
       </v-col>
       <v-col cols="7">
         <v-card>
-          <line-chart :chartdata="weekLine" />
+          <line-chart v-if="loaded" :chartdata="weekSitesLine" :key="weekSitesSelect" />
+          <div v-for="url in watchSites" :key="url">
+            <v-checkbox v-model="weekSitesSelect" :label="url" :value="url"></v-checkbox>
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -57,14 +60,16 @@ export default {
   data: () => ({
     chartDataProcessor: new ChartData(),
     loaded: false,
+    watchSites: null,
+
     weekRadar: null,
-    weekLine: null,
+    weekSitesLine: null,
     halfDonut: null,
     totalTime: null,
     topSites: null,
-    select: {
-      weeksRadar: null,
-    },
+
+    weeksRadarSelect: [],
+    weekSitesSelect: [],
   }),
   async mounted() {
     this.loaded = false;
@@ -74,11 +79,34 @@ export default {
     this.topSites = this.chartDataProcessor.topWatchSites(-7, 0).slice(0, 6);
 
     this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(2);
-    this.weekLine = this.chartDataProcessor.weekWatchSitesLineChart();
+    this.weekSitesLine = this.chartDataProcessor.weekWatchSitesLineChart(
+      moment()
+        .subtract(1, 'd')
+        .toDate()
+    );
+    console.log(this.weekSitesLine);
+    this.watchSites = this.weekSitesLine.datasets.map(data => {
+      return data.label;
+    });
+    this.weekSitesSelect = this.watchSites;
+
     this.halfDonut = this.chartDataProcessor.timeFrameWatchSitesHalfDonut(-7, 0);
-    console.log(this.halfDonut);
 
     this.loaded = true;
+  },
+  watch: {
+    weekSitesSelect: function(urls) {
+      // this.weekSitesLine = this.chartDataProcessor.weekSiteUsageLineChart(urls);
+      let intersection = this.watchSites.filter(x => !urls.includes(x));
+      console.log(intersection);
+      for (var i = 0; i < this.weekSitesLine.datasets.length; i++) {
+        // console.log(this.weekSitesLine.datasets[i].label, this.weekSitesLine.datasets[i].label in intersection)
+        if (intersection.includes(this.weekSitesLine.datasets[i].label)) {
+          this.weekSitesLine.datasets[i].hidden = true;
+        }
+      }
+      //this.weekSitesLine.datasets[0].hidden = true;
+    },
   },
   methods: {
     fetchWeeksRadar: function() {

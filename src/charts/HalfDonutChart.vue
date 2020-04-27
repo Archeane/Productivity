@@ -25,11 +25,14 @@ export default {
                 context.dataset.data.reduce((a, b) => {
                   return a + b;
                 });
-              if (percentage > 10) {
+              if (percentage > 20) {
                 var h = (minutes / 60) | 0,
                   m = minutes % 60 | 0;
-                return [label, `${h} hrs ${m} mins`];
-              } else return label;
+                return label;
+                // return [label, `${h} hrs ${m} mins`];
+              } else if (percentage >= 5) {
+                return minutes;
+              } else return '';
             },
           },
         },
@@ -47,7 +50,7 @@ export default {
         tooltips: {
           callbacks: {
             label: function(tooltipItem, data) {
-              var label = data.labels[tooltipItem.index];
+              var label = data.labels[tooltipItem.index].replace(/([.]\w+)$/, '').replace(/^www\./, '');
               var dataset = data.datasets[tooltipItem.datasetIndex];
               var total = dataset.data.reduce(function(previousValue, currentValue, currentIndex, array) {
                 return previousValue + currentValue;
@@ -63,7 +66,7 @@ export default {
               var percentage = Math.floor((currentValue / total) * 100 + 0.5);
               var h = (currentValue / 60) | 0,
                 m = currentValue % 60 | 0;
-              return [`${h} hrs ${m} mins | ${percentage} %`];
+              return [`${label} \n ${h} hrs ${m} mins, ${percentage} %`];
             },
           },
         },

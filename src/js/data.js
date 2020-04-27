@@ -721,7 +721,7 @@ export class ChartData {
     const colors = this.colors(Object.keys(weekUsage).length);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
       datasets.push({
-        label: url,
+        label: url.replace(/([.]\w+)$/, '').replace(/^www\./, ''),
         borderColor: colors.pop(),
         data: usageArr,
         fill: false,
@@ -816,7 +816,6 @@ export class ChartData {
   timeFrameWatchSitesHalfDonut(start, end, max = 10) {
     const week = this.getTimeFrame(start, end);
     const weekUsage = this.WatchSites.weekTopWatchSites(week);
-    console.log(weekUsage);
     let labels = weekUsage.map(x => x[0]).slice(0, max);
 
     let data = weekUsage.map(x => x[1]).slice(0, max);
@@ -841,8 +840,9 @@ export class ChartData {
   nWeeksWatchSitesChartRadar(n, date) {
     if (date == null) date = this.today;
     var datasets = [];
-    const colors = this.colors(n);
     const watchSites = this.WatchSites.getWatchSites();
+    const backgroundColors = ['rgba(255,99,132, 0.2)', 'rgba(54,162,235, 0.2)', 'rgba(153,102,255, 0.2)', 'rgba(75,192,192, 0.2)', 'rgba(255,159,64, 0.2)'];
+    const borderColors = ['rgb(255,99,132)', 'rgb(54,162,235)', 'rgb(153,102,255)', 'rgb(75,192,192)', 'rgb(255,159,64)'];
     for (var i = 0; i < n; i++) {
       const week = this.getWeek(date);
       const weekTotal = [];
@@ -853,19 +853,19 @@ export class ChartData {
           })
         );
       });
-      const color = colors.pop();
+      const color = borderColors.pop();
       datasets.push({
         label: `week of ${fn.getDateString(date)}`,
         borderColor: color,
-        backgroundColor: color,
-        pointBorderColor: '#fff',
+        backgroundColor: backgroundColors.pop(),
+        pointBorderColor: color,
         data: weekTotal,
         fill: true,
       });
       date = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7);
     }
     return {
-      labels: watchSites,
+      labels: watchSites.map(url => url.replace(/([.]\w+)$/, '').replace(/^www\./, '')),
       datasets: datasets,
     };
   }
