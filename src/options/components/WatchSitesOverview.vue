@@ -23,25 +23,27 @@
     <v-row>
       <v-col cols="5">
         <v-card>
-          <v-row>
-            <v-col cols="8">
-              <v-card-title>Total Time Online</v-card-title>
-            </v-col>
-            <v-col cols="4">
-              <v-checkbox v-model="weeksRadarSelect" label="Last Week" value="2" v-on:change="fetchWeeksRadar"></v-checkbox>
-              <v-checkbox v-model="weeksRadarSelect" label="Last last week" value="3" v-on:change="fetchWeeksRadar"></v-checkbox>
-            </v-col>
-          </v-row>
+          <v-card-title>Watch Sites Total Time</v-card-title>
           <v-divider></v-divider>
           <radar-chart v-if="loaded" :chartdata="weekRadar" />
         </v-card>
       </v-col>
       <v-col cols="7">
         <v-card>
-          <line-chart v-if="loaded" :chartdata="weekSitesLine" :key="weekSitesSelect" />
-          <div v-for="url in watchSites" :key="url">
-            <v-checkbox v-model="weekSitesSelect" :label="url" :value="url"></v-checkbox>
-          </div>
+          <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
+            <v-tab>Watch sites time</v-tab>
+            <v-tab>Total time</v-tab>
+            <v-tab-item>
+              <v-container fluid>
+                <line-chart v-if="loaded" :chartdata="weekSitesLine" />
+              </v-container>
+            </v-tab-item>
+            <v-tab-item>
+              <v-container fluid>
+                <line-chart v-if="loaded" :options="weekTotalLineOptions" :chartdata="weekTotalLineData" />
+              </v-container>
+            </v-tab-item>
+          </v-tabs>
         </v-card>
       </v-col>
     </v-row>
@@ -64,12 +66,13 @@ export default {
 
     weekRadar: null,
     weekSitesLine: null,
+    weekTotalLineData: null,
+    weekTotalLineOptions: null,
     halfDonut: null,
     totalTime: null,
     topSites: null,
 
     weeksRadarSelect: [],
-    weekSitesSelect: [],
   }),
   async mounted() {
     this.loaded = false;
@@ -78,35 +81,56 @@ export default {
     this.totalTime = this.minutesToHours(this.chartDataProcessor.timeFrameWatchSitesTotalUsage(-7, 0));
     this.topSites = this.chartDataProcessor.topWatchSites(-7, 0).slice(0, 6);
 
-    this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(2);
+    this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3);
     this.weekSitesLine = this.chartDataProcessor.weekWatchSitesLineChart(
       moment()
-        .subtract(1, 'd')
+        .subtract(2, 'd')
         .toDate()
     );
     console.log(this.weekSitesLine);
-    this.watchSites = this.weekSitesLine.datasets.map(data => {
-      return data.label;
-    });
-    this.weekSitesSelect = this.watchSites;
-
+    this.weekTotalLineData = this.chartDataProcessor.watchSitesTotalLineChart(
+      moment()
+        .subtract(1, 'd')
+        .toDate(),
+      1,
+      true
+    );
+    this.weekTotalLineOptions = {
+      plugins: {
+        datalabels: {
+          display: false,
+        },
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        xAxes: [
+          {
+            gridLines: {
+              display: false,
+            },
+          },
+        ],
+        yAxes: [
+          {
+            gridLines: {
+              display: true,
+            },
+            ticks: {
+              beginAtZero: true,
+              min: 0,
+              stepSize: 60,
+              callback: function(label, index, labels) {
+                return label / 60 + ' Hrs ';
+              },
+            },
+          },
+        ],
+      },
+    };
     this.halfDonut = this.chartDataProcessor.timeFrameWatchSitesHalfDonut(-7, 0);
 
     this.loaded = true;
-  },
-  watch: {
-    weekSitesSelect: function(urls) {
-      // this.weekSitesLine = this.chartDataProcessor.weekSiteUsageLineChart(urls);
-      let intersection = this.watchSites.filter(x => !urls.includes(x));
-      console.log(intersection);
-      for (var i = 0; i < this.weekSitesLine.datasets.length; i++) {
-        // console.log(this.weekSitesLine.datasets[i].label, this.weekSitesLine.datasets[i].label in intersection)
-        if (intersection.includes(this.weekSitesLine.datasets[i].label)) {
-          this.weekSitesLine.datasets[i].hidden = true;
-        }
-      }
-      //this.weekSitesLine.datasets[0].hidden = true;
-    },
   },
   methods: {
     fetchWeeksRadar: function() {

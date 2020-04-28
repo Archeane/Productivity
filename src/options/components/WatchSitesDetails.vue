@@ -19,7 +19,7 @@
         </v-row>
       </v-col>
       <v-col cols="6">
-        <scatter-chart :chartdata="sitesVisitsScatter" />
+        <scatter-chart v-if="loaded" :chartdata="sitesVisitsScatter" />
       </v-col>
     </v-row>
   </v-container>
@@ -59,9 +59,22 @@ export default {
     await this.chartDataProcessor.init();
 
     this.tableItems = this.chartDataProcessor.timeFrameWatchSitesUsageFrequency(-2, -1);
-    this.sitesIntervals = this.chartDataProcessor.daySitesTimeline(new Date(), null, null, true);
+    this.sitesIntervals = this.chartDataProcessor.daySitesTimeline(
+      moment()
+        .subtract(1, 'd')
+        .toDate(),
+      null,
+      null,
+      true
+    );
     console.log(this.sitesIntervals);
-    this.sitesVisitsScatter = this.chartDataProcessor.weekSiteVisitScatter(null, null, true);
+    this.sitesVisitsScatter = this.chartDataProcessor.weekSiteVisitScatter(
+      moment()
+        .subtract(1, 'd')
+        .toDate(),
+      null,
+      true
+    );
     console.log(this.sitesVisitsScatter);
 
     this.loaded = true;

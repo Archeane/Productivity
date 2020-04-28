@@ -14,12 +14,12 @@ export default {
     chartSeries: { type: Object, default: [] },
   },
   data: function() {
-    console.log(this.chartSeries);
     return {
       chartOptions: {
         chart: {
           height: 450,
           type: 'rangeBar',
+          defaultLocale: 'en',
         },
         plotOptions: {
           bar: {
@@ -29,6 +29,9 @@ export default {
         },
         xaxis: {
           type: 'datetime',
+          labels: {
+            datetimeUTC: false,
+          },
         },
         stroke: {
           width: 1,
