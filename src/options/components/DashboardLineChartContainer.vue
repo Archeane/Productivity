@@ -3,12 +3,18 @@
     <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
       <v-tab>Total time</v-tab>
       <v-tab>Specific sites</v-tab>
-      <v-btn-toggle color="primary" mandatory>
-        <v-btn :value="1" text>week</v-btn>
-        <v-btn :value="2" text>month</v-btn>
+      <v-btn-toggle color="primary" v-model="lineIsMonth" @change="$emit('update:lineIsMonth', lineIsMonth)" mandatory>
+        <v-btn :value="false" text>week</v-btn>
+        <v-btn :value="true" text>month</v-btn>
       </v-btn-toggle>
       <v-tab-item>
         <v-container fluid>
+          <v-select
+            v-model="weekTotalLinesSelect"
+            style="width: 50px;"
+            :items="['1', '2', '3', '4']"
+            @change="$emit('update:weekTotalLinesSelect', weekTotalLinesSelect)"
+          ></v-select>
           <line-chart :chartdata="weekTotal" :options="weekTotalOptions" :key="weekTotal" />
         </v-container>
       </v-tab-item>
@@ -38,6 +44,8 @@ export default {
     weekSites: { type: Object, default: null },
     visitedSites: { type: Array, default: [] },
     weekSitesSelection: { type: Array, default: [] },
+    weekTotalLinesSelect: { type: Number, default: 2 },
+    lineIsMonth: { type: Boolean, default: false },
   },
   components: {
     VCard,

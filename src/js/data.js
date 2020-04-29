@@ -641,6 +641,17 @@ export class ChartData {
     for (let i = 1; i <= 7; i++) week.push(fn.getDateString(d)), d.setDate(d.getDate() + 1);
     return week;
   }
+  getMonth(day) {
+    let month = [];
+    const startOfMonth = moment(day).startOf('month');
+    const endOfMonth = moment(day).endOf('month');
+    while (!startOfMonth.isSame(endOfMonth, 'date')) {
+      month.push(startOfMonth.clone().format('YYYY-MM-DD'));
+      startOfMonth.add(1, 'd');
+    }
+    month.push(endOfMonth.format('YYYY-MM-DD'));
+    return month;
+  }
 
   getWatchSites() {
     return this.WatchSites.getWatchSites();
@@ -691,9 +702,12 @@ export class ChartData {
   }
 
   // =============================Line charts =========================================
-  weekWatchSitesLineChart(today = new Date()) {
-    var datasets = [];
-    const week = this.getWeek(today);
+
+  weekWatchSitesLineChart(today, isMonth) {
+    if (today == null) today = this.today;
+    var datasets = [],
+      week;
+    isMonth ? (week = this.getMonth(today)) : (week = this.getWeek(today));
     const weekUsage = this.WatchSites.weekWatchSitesUsage(week);
     const colors = this.colors(Object.keys(weekUsage).length);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
@@ -715,16 +729,27 @@ export class ChartData {
    * @param {Date} date
    * @param {Number} n 0 = just this wk, 1 = this + last wk; n weeks before this date
    */
-  watchSitesTotalLineChart(date, n, isWatchSites) {
+  watchSitesTotalLineChart(date, n, isWatchSites, isMonth) {
     var datasets = [],
+      labels = [],
       urls = [];
     const colors = ['#ffb3ba', '#bae1ff', '#baffc9', '#ffdfba', '#ffffba'];
     if (date == null) date = this.today;
+    if (n == null) n = 0;
     if (isWatchSites) urls = this.getWatchSites();
+    if (!isMonth) labels = ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'];
     for (var k = 0; k < n; k++) {
-      const dateK = moment(date).subtract(k, 'week');
-      const week = this.getWeek(dateK);
-      var weekTotal = [0, 0, 0, 0, 0, 0, 0];
+      var week, weekTotal, dateK;
+      if (isMonth) {
+        dateK = moment(date).subtract(k, 'month');
+        week = this.getMonth(dateK);
+        weekTotal = Array(week.length).fill(0);
+        labels = week;
+      } else {
+        dateK = moment(date).subtract(k, 'week');
+        week = this.getWeek(dateK);
+        weekTotal = Array(7).fill(0);
+      }
       for (var i = 0; i < week.length; i++) {
         if (!isWatchSites) urls = this.timeFrameVisitedSites(null, null, week);
         urls.forEach(url => {
@@ -732,9 +757,10 @@ export class ChartData {
           if (dayUsage != {} && 'total' in dayUsage) weekTotal[i] += Math.floor(dayUsage.total / 60);
         });
       }
+      if (isMonth) (weekTotal[6] /= 1000), (weekTotal[8] /= 100), (weekTotal[10] /= 500), (weekTotal[13] /= 3000); //todo: delete
       const color = colors.shift();
       datasets.push({
-        label: `Week of ${dateK.format('MM/DD')}`,
+        label: isMonth ? `Month of ${dateK.format('MM/DD')}` : `Week of ${dateK.format('MM/DD')}`,
         borderColor: color,
         backgroundColor: fn.hex2rgba(color, 0.2),
         fill: true,
@@ -742,18 +768,17 @@ export class ChartData {
       });
     }
     return {
-      labels: ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'],
+      labels: labels,
       datasets: datasets,
     };
   }
 
-  weekSiteUsageLineChart(urls, day) {
+  weekSiteUsageLineChart(urls, day, isMonth) {
     if (urls == null) return {};
-    const week = this.thisWeek;
-    if (day != null) {
-      week = this.getWeek(day);
-    }
-    var datasets = [];
+    if (day == null) day = this.today;
+    var week,
+      datasets = [];
+    isMonth ? (week = this.getMonth(day)) : (week = this.getWeek(day));
     const colors = this.colors(urls.length);
     urls.forEach(url => {
       datasets.push({
@@ -768,9 +793,6 @@ export class ChartData {
       datasets: datasets,
     };
   }
-
-  monthSitesLineChartData() {}
-  monthTotalTimeLineChart() {}
 
   timeFrameVisitedSites(start, end, week) {
     var timeFrame;
@@ -854,14 +876,15 @@ export class ChartData {
    * @param {Number} n - number of weeks away from data
    * @param {String} date
    */
-  nWeeksWatchSitesChartRadar(n, date) {
+  nWeeksWatchSitesChartRadar(n, date, isMonth) {
     if (date == null) date = this.today;
     var datasets = [];
     const watchSites = this.WatchSites.getWatchSites();
     const backgroundColors = ['rgba(255,99,132, 0.2)', 'rgba(54,162,235, 0.2)', 'rgba(153,102,255, 0.2)', 'rgba(75,192,192, 0.2)', 'rgba(255,159,64, 0.2)'];
     const borderColors = ['rgb(255,99,132)', 'rgb(54,162,235)', 'rgb(153,102,255)', 'rgb(75,192,192)', 'rgb(255,159,64)'];
     for (var i = 0; i < n; i++) {
-      const week = this.getWeek(date);
+      var week;
+      isMonth ? (week = this.getMonth(date)) : (week = this.getWeek(date));
       const weekTotal = [];
       watchSites.forEach(url => {
         weekTotal.push(
@@ -879,7 +902,7 @@ export class ChartData {
         data: weekTotal,
         fill: true,
       });
-      date = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7);
+      isMonth ? (date = moment(date).subtract(1, 'months')) : (date = moment(date).subtract(1, 'week'));
     }
     return {
       labels: watchSites.map(url => url.replace(/([.]\w+)$/, '').replace(/^www\./, '')),
@@ -1189,14 +1212,6 @@ export class ChartData {
     };
   }
 
-  weekTopNFrequentSites(n = 10, date = this.today) {
-    return this.TimeTable.topNFrequentSites(n, this.getWeek(date));
-  }
-
-  weekTopNUsageSites(n = 10, date = this.today) {
-    return this.TimeTable.topNUsageSites(n, this.getWeek(date));
-  }
-
   /**
    *
    * @param {Date} date
@@ -1227,5 +1242,4 @@ export class ChartData {
       datasets: datasets,
     };
   }
-  monthChartPieData() {}
 }

@@ -1,5 +1,5 @@
 <template>
-  <v-container class="grey lighten-5">
+  <div>
     <v-row class="mb-6">
       <v-col :cols="4">
         <v-card>
@@ -27,7 +27,7 @@
               <v-card-title>Total Time Online</v-card-title>
             </v-col>
             <v-col cols="4">
-              <v-select v-model="halfDonutSelect" style="width: 50px;" :items="['2', '3', '4', '5', '6', '7']"></v-select>
+              <v-select v-model="halfDonutSelect" style="width: 50px;" :items="['3', '7', '14', '30']"></v-select>
             </v-col>
           </v-row>
           <v-divider></v-divider>
@@ -49,24 +49,39 @@
         </v-card>
       </v-col>
     </v-row>
-
-    <DashboardLineChartContainer
-      v-if="loaded"
-      :weekTotal="weekChartData.totalLine"
-      :weekTotalOptions="weekChartData.totalLineOptions"
-      :weekSites.sync="weekChartData.sitesLine"
-      :visitedSites="monthVisitedSites"
-      :weekSitesSelection.sync="weekSitesSelection"
-    />
-  </v-container>
-  <!-- <v-card>
-      <v-card-title>
-        Usage Stats Week of {{ new Date().getMonth() }}
-        <v-spacer></v-spacer>
-        <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
-      </v-card-title>
-      <v-data-table v-if="loaded" :headers="tableHeaders" :items="weekChartData.usageFrequencyTable" :search="search" multi-sort class="elevation-1"></v-data-table>
-    </v-card>-->
+    <v-row class="mb-6">
+      <v-col cols="4">
+        <v-card>
+          <v-card-title>
+            Usage Stats Week of {{ new Date().getMonth() }}
+            <v-spacer></v-spacer>
+            <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
+          </v-card-title>
+          <v-data-table
+            v-if="loaded"
+            :items-per-page="5"
+            :headers="tableHeaders"
+            :items="weekChartData.usageFrequencyTable"
+            :search="search"
+            multi-sort
+            class="elevation-1"
+          ></v-data-table>
+        </v-card>
+      </v-col>
+      <v-col cols="8">
+        <DashboardLineChartContainer
+          v-if="loaded"
+          :weekTotal="weekChartData.totalLine"
+          :weekTotalOptions="weekChartData.totalLineOptions"
+          :weekSites.sync="weekChartData.sitesLine"
+          :visitedSites="monthVisitedSites"
+          :weekSitesSelection.sync="weekSitesSelection"
+          :weekTotalLinesSelect.sync="weekTotalLinesSelect"
+          :lineIsMonth.sync="lineIsMonth"
+        />
+      </v-col>
+    </v-row>
+  </div>
 </template>
 <script>
 import LineChart from '../../charts/LineChart';
@@ -85,20 +100,23 @@ export default {
     weekTotalUsage: '',
     lastWeekTotalUsageCmp: 0,
     lastWeekTotalUsageCmpColor: colors.red.lighten1, // true = usage increased compared to last week
+    search: '',
     tableHeaders: [
       {
         text: 'Url',
         aligh: 'start',
         value: 'name',
       },
-      { text: 'Total Time', value: 'total' },
-      { text: 'Visit Frequency', value: 'frequency' },
-      { text: 'Avg Time Per Visit (mins)', value: 'timePerVist' },
+      { text: 'Total time', value: 'total' },
+      { text: 'Visit freq', value: 'frequency' },
+      { text: 'Avg time/visit', value: 'timePerVist' },
     ],
     weekTotalSelect: 7,
     halfDonutSelect: 3,
     stackedBarSelect: 3,
     weekSitesSelection: [],
+    weekTotalLinesSelect: 2,
+    lineIsMonth: false,
     weekChartData: {
       totalLine: null,
       totalLineOptions: null,
@@ -124,8 +142,9 @@ export default {
 
     this.weekChartData.halfDonut = this.chartDataProcessor.weekChartHalfDonutData(-3, 0);
     this.weekChartData.stackedBar = this.chartDataProcessor.siteUsageStackedBarData(-3, 0);
+    this.weekChartData.usageFrequencyTable = this.chartDataProcessor.weekSitesUsageFrequency();
 
-    this.weekChartData.totalLine = this.chartDataProcessor.watchSitesTotalLineChart(new Date(), 2, false);
+    this.weekChartData.totalLine = this.chartDataProcessor.watchSitesTotalLineChart(null, 2, false, this.lineIsMonth);
     this.weekChartData.totalLineOptions = {
       plugins: {
         datalabels: {
@@ -194,7 +213,16 @@ export default {
       this.weekChartData.stackedBar = this.chartDataProcessor.siteUsageStackedBarData(parseInt(val) * -1, 0);
     },
     weekSitesSelection: function(val) {
-      this.weekChartData.sitesLine = this.chartDataProcessor.weekSiteUsageLineChart(val);
+      this.weekChartData.sitesLine = this.chartDataProcessor.weekSiteUsageLineChart(val, null, this.lineIsMonth);
+    },
+    weekTotalLinesSelect: function(val) {
+      this.weekChartData.totalLine = this.chartDataProcessor.watchSitesTotalLineChart(null, val, false, this.lineIsMonth);
+    },
+    lineIsMonth: function(isMonth) {
+      this.weekChartData.sitesLine = this.chartDataProcessor.weekSiteUsageLineChart(this.weekSitesSelection, null, isMonth);
+      this.weekChartData.totalLine = this.chartDataProcessor.watchSitesTotalLineChart(null, this.weekTotalLinesSelect, false, isMonth);
+      console.log(this.weekChartData.sitesLine);
+      console.log(this.weekChartData.totalLine);
     },
   },
   components: { LineChart, HalfDonutChart, StackedBarChart, DashboardLineChartContainer },
