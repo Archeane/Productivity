@@ -1,10 +1,13 @@
 <script>
-import { Bar } from 'vue-chartjs';
+import { HorizontalBar } from 'vue-chartjs';
 import Chart from 'chart.js';
-//import ChartDataLabels from 'chartjs-plugin-datalabels';
+import ChartJsPluginDataLabels from 'chartjs-plugin-datalabels';
 import moment from 'moment';
 export default {
-  extends: Bar,
+  extends: HorizontalBar,
+  components: {
+    ChartJsPluginDataLabels,
+  },
   props: {
     chartdata: { type: Object, default: null },
   },
@@ -13,6 +16,9 @@ export default {
       options: {
         plugins: {
           datalabels: {
+            formatter: function(value, context) {
+              console.log(value, context);
+            },
             display: false,
           },
         },
@@ -32,8 +38,9 @@ export default {
           },
         },
         responsive: true,
+        maintainAspectRatio: false,
         scales: {
-          xAxes: [
+          yAxes: [
             {
               stacked: true,
               gridLines: {
@@ -46,7 +53,7 @@ export default {
               },
             },
           ],
-          yAxes: [
+          xAxes: [
             {
               stacked: true,
               ticks: {

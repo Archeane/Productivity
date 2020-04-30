@@ -7,13 +7,12 @@
 </template>
 
 <script>
-import VueChartJS from '../charts/VueChartJS.vue';
-import AddWatchSiteButton from './components/AddWatchSiteButton'
+import AddWatchSiteButton from './components/AddWatchSiteButton';
 
 export default {
   name: 'app',
   components: {
-    VueChartJS, AddWatchSiteButton
+    AddWatchSiteButton,
   },
 };
 </script>

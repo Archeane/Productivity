@@ -6,36 +6,6 @@ import moment from 'moment';
 import { colors } from 'vuetify/lib';
 
 var fn = new Fn();
-/**
- * Line charts:
- *        1) Week total usage
- *        2) week watch sites usage - date => site usage on date
- *        3) specifc site usage
- *
- * Donghout:
- *   Day:
- *      1) Day site => day_usage
- *   Week:
- *      2) Week site => total_usage_this_week
- *      3) Half donut site => total_usage_this_week
- *
- *  Bar:
- *          1) x: date, y: site time on date    - bar stacked
- *  Radar:  1) x: watch site, y: total time this week   - column overlap
- *
- * TimeLine:
- *      Day:
- *          1) x: time, y: which site   -group by label: today's usage pattern
- *          2) x: time, y: site - no group by label: site usage patterns
- *          3) x: hour y: watch site - no group by label
- *
- * Scatter:
- *      1) x - day, y - site. point = single entry
- *
- * Table:
- *      1) week usage & freuqncy
- */
-
 async function getTimeTable() {
   return new Promise((res, rej) => {
     try {
@@ -675,12 +645,21 @@ export class ChartData {
       if (end > 0) lastDate = moment().add(end, 'd');
       if (start == 0) (currDate = moment()), lastDate.subtract(1, 'd');
       if (end == 0) (lastDate = moment()), currDate.add(1, 'd');
-      while (!currDate.isSame(lastDate, 'date')) {
-        dates.push(currDate.clone().format('YYYY-MM-DD'));
-        currDate.add(1, 'd');
-      }
-      dates.push(lastDate.format('YYYY-MM-DD'));
+    } else if (
+      start instanceof Date &&
+      end instanceof Date &&
+      Object.prototype.toString.call(start) === '[object Date]' &&
+      Object.prototype.toString.call(end) === '[object Date]'
+    ) {
+      (currDate = moment(start)), (lastDate = moment(end));
+    } else {
+      return [];
     }
+    while (!currDate.isSame(lastDate, 'date')) {
+      dates.push(currDate.clone().format('YYYY-MM-DD'));
+      currDate.add(1, 'd');
+    }
+    dates.push(lastDate.format('YYYY-MM-DD'));
     return dates;
   }
 
@@ -954,7 +933,7 @@ export class ChartData {
       ) {
         datasets.push({
           label: url,
-          backgroundColor: colors.pop() || 'RED',
+          backgroundColor: colors.shift(),
           data: usageArr,
           datalabels: {
             formatter: function(value, context) {
@@ -996,34 +975,6 @@ export class ChartData {
       name: fn.getDateString(date),
       data: data,
     };
-    // var visits = [];
-    // for (let [url, usage] of Object.entries(timeTable[date])) {
-    //     if (usage['total'] > 600) {
-    //         var data = [];
-    //         usage['visits'].forEach(interval => {
-    //             typeof interval === 'object' &&
-    //                 interval[1] - interval[0] > 300 &&
-    //                 data.push({
-    //                     x: date,
-    //                     y: interval,
-    //                 });
-    //         });
-    //         visits.push({
-    //             name: url,
-    //             data: data,
-    //         });
-    //     }
-    // }
-    // for (let [url, usage] of Object.entries(timeTable[date])){
-    //     if (usage['total'] > 600){
-    //         var data = []
-    //         usage['visits'].forEach((interval) => {
-    //             typeof(interval) === "object" && data.push({x: url, y: interval})
-    //         });
-    //         visits.push({name: url, data: data})
-    //     }
-    // }
-    // return visits;
   }
 
   daysSitesTimeline(timeFrame) {
@@ -1120,31 +1071,23 @@ export class ChartData {
     const visits = this.TimeTable.getDayVisits(date);
     var intByHour = this.breakDayToHoursIntervals(visits);
     return intByHour;
-    return [
-      {
-        group: date,
-        data: [
-          {
-            label: '',
-            data: visits,
-          },
-        ],
-      },
-    ];
   }
 
   // ============================= Table =========================================
 
-  weekSitesUsageFrequency(date = this.today) {
+  weekSitesUsageFrequency(date) {
+    if (date == null) date = this.today;
     const urlUsage = this.TimeTable.getSitesWeekTotalFrequencyUsage(this.getWeek(date));
     var data = [];
     for (let [url, usage] of Object.entries(urlUsage)) {
-      data.push({
-        name: url,
-        total: usage['total'],
-        frequency: usage['frequency'],
-        timePerVist: Math.round((usage['total'] * 100) / usage['frequency']) / 100,
-      });
+      if (usage['total'] > 0) {
+        data.push({
+          name: url,
+          total: usage['total'],
+          frequency: usage['frequency'],
+          timePerVist: Math.round((usage['total'] * 100) / usage['frequency']) / 100,
+        });
+      }
     }
     return data;
   }
@@ -1209,37 +1152,6 @@ export class ChartData {
     }
     return {
       datasets: data,
-    };
-  }
-
-  /**
-   *
-   * @param {Date} date
-   * @param {number} n
-   * @param {Object} timeTable
-   * @returns {LineChartDataObject} {labels: Array, datasets: Array[Objects]}
-   */
-  weekTopNSitesLineChartData(date, n, timeTable) {
-    var sitesUsage = {}; // url: [mon_usage, tues_usage ...]
-    const week = this.getWeek(date);
-    const topNSites = this.TimeTableData.topNUsageSites(n, week);
-    topNSites.forEach(site => {
-      sitesUsage[site] = this.TimeTableData.siteWeekTime(week, site, timeTable);
-    });
-    var datasets = [];
-    for (let [url, time_arr] of Object.entries(sitesUsage))
-      datasets.push({
-        data: time_arr,
-        label: url,
-        fill: false,
-      });
-    const colors = this.colors(n);
-    datasets.forEach(dataset => {
-      dataset['borderColor'] = colors.pop();
-    });
-    return {
-      labels: ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'],
-      datasets: datasets,
     };
   }
 }

@@ -1,5 +1,5 @@
 <template>
-  <v-container class="grey lighten-5">
+  <v-container fluid fill-height>
     <v-btn-toggle color="primary" v-model="isMonth" mandatory>
       <v-btn :value="false" text>week</v-btn>
       <v-btn :value="true" text>month</v-btn>
@@ -104,7 +104,7 @@ export default {
         .sort((a, b) => {
           return b[1] - a[1];
         });
-      this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(1, null, this.isMonth);
+      this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3, null, this.isMonth);
 
       this.weekSitesLine = this.chartDataProcessor.weekWatchSitesLineChart(null, this.isMonth);
 

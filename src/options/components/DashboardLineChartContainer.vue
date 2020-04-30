@@ -1,21 +1,21 @@
 <template>
-  <v-card class="mx-auto" max-width="800">
+  <v-card class="mx-auto" style="max-height: 56vh">
     <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
       <v-tab>Total time</v-tab>
       <v-tab>Specific sites</v-tab>
-      <v-btn-toggle color="primary" v-model="lineIsMonth" @change="$emit('update:lineIsMonth', lineIsMonth)" mandatory>
+      <v-btn-toggle color="primary" style="margin-left: auto;" class="mt-3 mr-5" v-model="lineIsMonth" @change="$emit('update:lineIsMonth', lineIsMonth)" dense mandatory>
         <v-btn :value="false" text>week</v-btn>
         <v-btn :value="true" text>month</v-btn>
       </v-btn-toggle>
       <v-tab-item>
         <v-container fluid>
-          <v-select
+          <!-- <v-select
             v-model="weekTotalLinesSelect"
             style="width: 50px;"
             :items="['1', '2', '3', '4']"
             @change="$emit('update:weekTotalLinesSelect', weekTotalLinesSelect)"
-          ></v-select>
-          <line-chart :chartdata="weekTotal" :options="weekTotalOptions" :key="weekTotal" />
+          ></v-select> -->
+          <line-chart :chartdata="weekTotal" :options="weekTotalOptions" :key="weekTotal" style="max-height: 45.5vh;" />
         </v-container>
       </v-tab-item>
       <v-tab-item>
@@ -28,7 +28,7 @@
             label="Websites"
             @change="$emit('update:weekSitesSelection', weekSitesSelection)"
           ></v-autocomplete>
-          <line-chart :chartdata="weekSites" :key="weekSites" />
+          <line-chart :chartdata="weekSites" :key="weekSites" style="max-height: 80%" />
         </v-container>
       </v-tab-item>
     </v-tabs>
