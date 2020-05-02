@@ -17,6 +17,8 @@ export default {
             stepSize: null,
           },
         },
+        responsive: true,
+        maintainAspectRatio: false,
         tooltips: {
           enabled: true,
         },

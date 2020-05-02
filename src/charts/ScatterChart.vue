@@ -50,6 +50,9 @@ export default {
   data: function() {
     return {
       options: {
+        chart: {
+          height: '100%',
+        },
         plugins: {
           datalabels: { display: false },
         },
@@ -59,13 +62,23 @@ export default {
               gridLines: {
                 display: false,
               },
-              ticks: {
-                type: 'linear',
-                callback: function(val, index, values) {
-                  // console.log(val, index, values)
-                  return moment(val).format('MM/DD');
+              // ticks: {
+              // callback: function(val, index, values) {
+              //   console.log(val, index, values)
+              //   return moment(val).format('MM/DD');
+              // },
+              type: 'time',
+              time: {
+                unit: 'day',
+                stepSize: 1,
+                displayFormats: {
+                  millisecond: 'MMM DD',
+                  second: 'MMM DD',
+                  hour: 'MMM DD',
+                  day: 'MMM DD',
                 },
               },
+              // },
             },
           ],
           yAxes: [
@@ -75,16 +88,8 @@ export default {
                 stepSize: 60,
                 callback: function(label, index, labels) {
                   return moment(parseInt(Math.round(label / 60)), ['HH']).format('h A');
-                  // return label / 60 + ' AM ';
                 },
               },
-              // type: 'time',
-              // unit: 'hour',
-              // unitStepSize: 1,
-              // distribution: 'linear',
-              // time: {
-              //   stepSize: 1,
-              // },
             },
           ],
         },
@@ -92,7 +97,6 @@ export default {
     };
   },
   mounted() {
-    console.log(this.chartdata);
     this.renderChart(this.chartdata, this.options);
   },
 };

@@ -11,15 +11,15 @@ export default {
     apexcharts: VueApexCharts,
   },
   props: {
-    chartSeries: { type: Object, default: [] },
+    chartSeries: { type: Object, default: {} },
   },
   data: function() {
     return {
       chartOptions: {
         chart: {
-          height: 450,
           type: 'rangeBar',
           defaultLocale: 'en',
+          width: '90%',
         },
         plotOptions: {
           bar: {

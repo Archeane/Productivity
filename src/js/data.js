@@ -524,7 +524,7 @@ class WatchSitesData {
         // console.log(`${day}, ${url}, seconds btw visit: ${urlUsage[url]['timeBtwVisit']}, visits.length: ${usage['visits'].length}, totalIntervaltime: ${totalIntervalTime}, freq: ${freq}`)
         days += 1;
       });
-      urlUsage[url]['timeBtwVisit'] /= days;
+      if (url in urlUsage) urlUsage[url]['timeBtwVisit'] /= days;
     });
     return urlUsage;
   }
@@ -587,16 +587,18 @@ export class ChartData {
       '#71c73c',
       '#189ad3',
     ];
-    var colors = [];
+    if (num_of_colors == null) return color_palette;
     if (num_of_colors > color_palette.length) {
+      // todo: resolve
       return color_palette;
     }
-    for (var i = 0; i < num_of_colors; i++) {
-      let rand = [Math.floor(Math.random() * color_palette.length)];
-      colors.push(color_palette[rand]);
-      color_palette.splice(rand, 1);
-    }
-    return colors;
+    // var colors = [];
+    // for (var i = 0; i < num_of_colors; i++) {
+    //   let rand = [Math.floor(Math.random() * color_palette.length)];
+    //   colors.push(color_palette[rand]);
+    //   color_palette.splice(rand, 1);
+    // }
+    return color_palette.slice(0, num_of_colors);
   } // return same number of colors as number of items in data passed in
 
   getMonday(d) {
@@ -688,11 +690,11 @@ export class ChartData {
       week;
     isMonth ? (week = this.getMonth(today)) : (week = this.getWeek(today));
     const weekUsage = this.WatchSites.weekWatchSitesUsage(week);
-    const colors = this.colors(Object.keys(weekUsage).length);
+    const colors = this.colors(); //Object.keys(weekUsage).length);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
       datasets.push({
         label: url.replace(/([.]\w+)$/, '').replace(/^www\./, ''),
-        borderColor: colors.pop(),
+        borderColor: colors.shift(),
         data: usageArr,
         fill: false,
       });
@@ -758,11 +760,11 @@ export class ChartData {
     var week,
       datasets = [];
     isMonth ? (week = this.getMonth(day)) : (week = this.getWeek(day));
-    const colors = this.colors(urls.length);
+    const colors = this.colors(); //urls.length);
     urls.forEach(url => {
       datasets.push({
         label: url,
-        borderColor: colors.pop(),
+        borderColor: colors.shift(),
         fill: false,
         data: this.TimeTable.siteWeekTime(week, url),
       });
@@ -872,11 +874,11 @@ export class ChartData {
           })
         );
       });
-      const color = borderColors.pop();
+      const color = borderColors.shift();
       datasets.push({
         label: `week of ${fn.getDateString(date)}`,
         borderColor: color,
-        backgroundColor: backgroundColors.pop(),
+        backgroundColor: backgroundColors.shift(),
         pointBorderColor: color,
         data: weekTotal,
         fill: true,
@@ -913,7 +915,7 @@ export class ChartData {
         dayTotalTimes[i] += total;
       }
     }
-    const colors = this.colors(Object.keys(weekUsage).length);
+    const colors = this.colors(); //Object.keys(weekUsage).length);
     let datasets = [];
     const weekMinutesThreshold = Math.floor(weekTotalTime / 100);
     const daysThreshold = Math.floor((end - start) / 3);
@@ -1112,7 +1114,9 @@ export class ChartData {
   // ============================= Scatter =========================================
   weekSiteVisitScatter(date, urls, watchSites) {
     if (date == null) date = this.today;
-    var fetchUrls;
+    var fetchUrls,
+      labels = [],
+      data = [];
     if (watchSites) fetchUrls = this.WatchSites.getWatchSites();
     if (urls) fetchUrls = urls;
     const week = this.getWeek(date);
@@ -1123,12 +1127,12 @@ export class ChartData {
         const dayVisits = this.TimeTable.getSiteDayVisits(day, url);
         if (dayVisits == []) return;
         for (var i = 0; i < dayVisits.length; i++) {
-          var d = new Date(dayVisits[i][0]),
-            h = d.getHours(),
-            m = d.getMinutes();
           if (typeof dayVisits[i] !== 'number') {
+            var d = new Date(dayVisits[i][0]),
+              h = d.getHours(),
+              m = d.getMinutes();
             var x = new Date(day).setHours(0, 0, 0, 0);
-            // console.log(day, x);
+            if (!labels.includes(x)) labels.push(x);
             urlVisits[url].push({
               x: x,
               y: h * 60 + m,
@@ -1136,13 +1140,13 @@ export class ChartData {
           }
         }
       });
-      console.log(urlVisits[url]);
     });
-    var data = [];
-    const colors = this.colors(fetchUrls.length);
+    const colors = this.colors(); //fetchUrls.length);
     for (let [url, dataObj] of Object.entries(urlVisits)) {
+      // console.log(url)
+      // dataObj.forEach(obj => console.log(obj.x, new Date(obj.x)))
       // data.push({name: url, data: dataObj})    apex
-      const color = colors.pop();
+      const color = colors.shift();
       data.push({
         label: url,
         borderColor: color,
@@ -1151,7 +1155,79 @@ export class ChartData {
       });
     }
     return {
+      labels: labels,
       datasets: data,
     };
+  }
+  //=================== Heat map
+  /**
+   *
+   * @param {Array} interval = single [milisecond enter, miliseconds exit]
+   * @returns {1: minutes in hour 1, 2: minutes in hour 2...}
+   */
+  breakIntervalByHour(interval) {
+    var start = moment(interval[0]),
+      end = moment(interval[1]),
+      data = {};
+    //console.log(start.toDate(), end.toDate())
+    if (start.hour() < end.hour()) {
+      data[start.hour()] = 60 - parseInt(start.minute());
+      if (end.hour() - start.hour() == 1) data[end.hour()] = parseInt(end.minute());
+      else {
+        start.add('1', 'hour');
+        while (start.hour() < end.hour()) {
+          data[start.hour()] = 60;
+          start.add('1', 'hour');
+        }
+        data[end.hour()] = parseInt(end.minute());
+      }
+    } else {
+      data[start.hour()] = parseInt(end.minute()) - parseInt(start.minute());
+    }
+    return data;
+  }
+
+  weekSiteVisitHeatMap(date, sites, watchSites) {
+    if (date == null) date = this.today;
+    const timeFrame = this.getWeek(date);
+    // const timeFrame = this.getTimeFrame(start, end);
+    var urls,
+      urlVisits = {};
+    if (sites) urls = sites;
+    else if (watchSites) urls = this.getWatchSites();
+    else return;
+    var dataseries = {}; // url => [{name: "1AM", data: [{x: Day1, y: 30mins}]}]
+    urls.forEach(url => {
+      if (!(url in urlVisits)) urlVisits[url] = {}; // url => {1AM: [day1 minutes, day2_minutes, ...]
+      for (var k = 0; k < timeFrame.length; k++) {
+        const dayVisits = this.TimeTable.getSiteDayVisits(timeFrame[k], url);
+        // console.log(url, dayVisits);
+        if (dayVisits == []) return;
+        for (var i = 0; i < dayVisits.length; i++) {
+          if (typeof dayVisits[i] !== 'number') {
+            const hoursVisit = this.breakIntervalByHour(dayVisits[i]);
+            for (let [hour, minutes] of Object.entries(hoursVisit)) {
+              if (!(hour in urlVisits[url])) urlVisits[url][hour] = Array(timeFrame.length).fill(0);
+              urlVisits[url][hour][k] += parseInt(minutes);
+              // console.log(hoursVisit, urlVisits[url][hour])
+            }
+          }
+        }
+      }
+      // console.log(url, urlVisits[url]);
+      dataseries[url] = [];
+      for (var hour = 0; hour < 24; hour++) {
+        if (hour in urlVisits[url]) {
+          var hourObj = { name: hour, data: [] };
+          for (var dayCounter = 0; dayCounter < urlVisits[url][hour].length; dayCounter++) {
+            const minutesInDay = urlVisits[url][hour][dayCounter];
+            hourObj.data.push({ x: timeFrame[dayCounter], y: minutesInDay });
+          }
+          dataseries[url].push(hourObj);
+        }
+      }
+      // console.log(dataseries[url]);
+    });
+    return dataseries;
   }
 }

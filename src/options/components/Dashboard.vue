@@ -113,45 +113,6 @@
                   <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
                 </v-col>
               </v-row>
-              <!-- <v-row dense style="max-height: 6vh;">
-                <v-col cols="11">
-                  <v-row align="start" justify="start" style="margin-top: -1.5vh;">
-                    <v-card-title style="margin-left: 2vh;">Week of</v-card-title>
-                    <v-menu>
-                      <template v-slot:activator="{ on }">
-                        <v-text-field
-                          :value="tableDate"
-                          v-on="on"
-                          style="max-width: 7.5rem; margin-top: 1rem; padding: 0 0 0 0"
-                          dense
-                        ></v-text-field>
-                      </template>
-                      <v-date-picker v-model="tableDate" no-title></v-date-picker>
-                    </v-menu>
-                    <v-row justify="end">
-                      <v-text-field
-                        v-model="search"
-                        append-icon="mdi-magnify"
-                        label="Search"
-                        style="width: 100px !important;"
-                        single-line
-                        hide-details
-                      ></v-text-field>
-                    </v-row>
-                  </v-row>
-                </v-col>
-              </v-row>-->
-
-              <!-- <v-col offset="1" cols="11" class="pb-5">
-                  <v-text-field
-                    v-model="search"
-                    append-icon="mdi-magnify"
-                    label="Search"
-                    style="max-width: 90%; margin-top: -1rem;"
-                    single-line
-                    hide-details
-                  ></v-text-field>
-              </v-col>-->
 
               <v-data-table
                 v-if="loaded"

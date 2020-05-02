@@ -74,6 +74,7 @@ export default {
     };
   },
   mounted() {
+    console.log(this.options);
     this.renderChart(this.chartdata, this.options);
   },
 };

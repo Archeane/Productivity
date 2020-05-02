@@ -1,56 +1,76 @@
 <template>
   <v-container fluid fill-height>
-    <v-btn-toggle color="primary" v-model="isMonth" mandatory>
+    <h2 class="font-weight-light">Watch Sites Overview</h2>
+    <v-btn-toggle color="primary" v-model="isMonth" dense rounded mandatory style="margin-left:auto;">
       <v-btn :value="false" text>week</v-btn>
       <v-btn :value="true" text>month</v-btn>
     </v-btn-toggle>
-    <v-row>
-      <v-col cols="3">
-        <v-card>
-          <v-card-title>{{ totalTime }}</v-card-title>
-        </v-card>
-        <v-card>
-          <half-donut-chart v-if="loaded" :chartdata="halfDonut" :key="halfDonut" />
-        </v-card>
-      </v-col>
-      <v-col cols="9">
-        <v-row :key="topSites">
-          <v-col v-for="usage in topSites" :key="usage[0]" cols="4">
-            <v-card>
-              <v-card-subtitle>{{ usage[0] }}</v-card-subtitle>
-              <v-card-title>{{ minutesToHours(usage[1]) }}</v-card-title>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="5">
-        <v-card>
-          <v-card-title>Watch Sites Total Time</v-card-title>
-          <v-divider></v-divider>
-          <radar-chart v-if="loaded" :chartdata="weekRadar" :key="weekRadar" />
-        </v-card>
-      </v-col>
-      <v-col cols="7">
-        <v-card>
-          <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
-            <v-tab>Watch sites time</v-tab>
-            <v-tab>Total time</v-tab>
-            <v-tab-item>
-              <v-container fluid>
-                <line-chart v-if="loaded" :chartdata="weekSitesLine" :key="weekSitesLine" />
-              </v-container>
-            </v-tab-item>
-            <v-tab-item>
-              <v-container fluid>
-                <line-chart v-if="loaded" :options="weekTotalLineOptions" :chartdata="weekTotalLineData" :key="weekTotalLineData" />
-              </v-container>
-            </v-tab-item>
-          </v-tabs>
-        </v-card>
-      </v-col>
-    </v-row>
+    <v-col cols="12" style="max-height: 34vh;">
+      <v-row>
+        <v-col cols="3">
+          <v-card height="31.5vh">
+            <v-card-title>
+              <span class="subtitle-2 font-weight-light">Total time:</span>
+              <span class="headline font-weight-bold" style="margin-left: auto;">{{ totalTime }}</span>
+            </v-card-title>
+            <v-divider></v-divider>
+            <v-card-actions>
+              <v-row class="chart-container" style="margin-top: -20%;" justify="center" align="center">
+                <v-col cols="10">
+                  <half-donut-chart v-if="loaded" :chartdata="halfDonut" :key="halfDonut" />
+                </v-col>
+              </v-row>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+        <v-col cols="9" style="margin-top: -1vh;">
+          <v-row :key="topSites">
+            <v-col v-for="usage in topSites" :key="usage.url" cols="4">
+              <v-card>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title class="headline mb-1"> {{ usage.total }} </v-list-item-title>
+                    <v-list-item-subtitle> {{ usage.url }} </v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-avatar tile size="30" :src="usage.favicon"></v-list-item-avatar>
+                </v-list-item>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-col>
+    <v-col cols="12" style="max-height: 55vh;">
+      <v-row>
+        <v-col cols="5">
+          <v-card height="52vh">
+            <v-card-title class="pb-2 pt-2">Watch Sites Total Time</v-card-title>
+            <v-divider></v-divider>
+            <div class="chart-container" style="position: relative; width: 90%;">
+              <radar-chart v-if="loaded" :chartdata="weekRadar" :key="weekRadar" style="max-height: 45vh;" />
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="7">
+          <v-card>
+            <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
+              <v-tab>Watch sites time</v-tab>
+              <v-tab>Total time</v-tab>
+              <v-tab-item>
+                <v-container fluid>
+                  <line-chart v-if="loaded" :chartdata="weekSitesLine" :key="weekSitesLine" />
+                </v-container>
+              </v-tab-item>
+              <v-tab-item>
+                <v-container fluid>
+                  <line-chart v-if="loaded" :options="weekTotalLineOptions" :chartdata="weekTotalLineData" :key="weekTotalLineData" />
+                </v-container>
+              </v-tab-item>
+            </v-tabs>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-col>
   </v-container>
 </template>
 <script>
@@ -75,7 +95,7 @@ export default {
     weekTotalLineOptions: null,
     halfDonut: null,
     totalTime: null,
-    topSites: null,
+    topSites: [],
 
     weeksRadarSelect: [],
   }),
@@ -98,12 +118,15 @@ export default {
       this.isMonth ? (days = 30) : (days = 7);
       this.totalTime = this.minutesToHours(this.chartDataProcessor.timeFrameWatchSitesTotalUsage(days * -1, 0));
       this.halfDonut = this.chartDataProcessor.timeFrameWatchSitesHalfDonut(days * -1, 0);
-      this.topSites = this.chartDataProcessor
+      var topSites = this.chartDataProcessor
         .topWatchSites(days * -1, 0)
         .slice(0, 6)
         .sort((a, b) => {
           return b[1] - a[1];
         });
+      topSites.forEach(site => this.topSites.push({ url: site[0], total: this.minutesToHours(site[1]), favicon: this.getFavIconUrl(site[0]) }));
+      console.log(this.topSites);
+
       this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3, null, this.isMonth);
 
       this.weekSitesLine = this.chartDataProcessor.weekWatchSitesLineChart(null, this.isMonth);
@@ -150,6 +173,9 @@ export default {
       var h = Math.round(minutes / 60),
         m = minutes % 60;
       return `${h} hrs ${m} mins`;
+    },
+    getFavIconUrl: function(domain) {
+      return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}`;
     },
   },
   components: { LineChart, RadarChart, HalfDonutChart },
