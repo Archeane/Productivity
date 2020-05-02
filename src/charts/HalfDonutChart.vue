@@ -18,7 +18,9 @@ export default {
         plugins: {
           datalabels: {
             formatter: function(value, context) {
-              var label = context.chart.data.labels[context.dataIndex].replace(/([.]\w+)$/, '').replace(/^www\./, '');
+              const url = context.chart.data.labels[context.dataIndex];
+              //var favicon = `https://s2.googleusercontent.com/s2/favicons?domain=${url}`;
+              var label = url.replace(/([.]\w+)$/, '').replace(/^www\./, '');
               var minutes = context.dataset.data[context.dataIndex];
               var percentage =
                 (minutes * 100) /

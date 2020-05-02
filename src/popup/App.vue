@@ -1,19 +1,13 @@
 <template>
   <div id="app">
     <h1>My Vue App</h1>
-    <AddWatchSiteButton />
-    <VueChartJS />
   </div>
 </template>
 
 <script>
-import AddWatchSiteButton from './components/AddWatchSiteButton';
-
 export default {
   name: 'app',
-  components: {
-    AddWatchSiteButton,
-  },
+  components: {},
 };
 </script>
 

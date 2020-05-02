@@ -1,5 +1,5 @@
 <template>
-  <div style="width: 90vw; height: 90vh;">
+  <v-container fluid fillheight>
     <v-row>
       <v-col cols="7">
         <v-row>
@@ -129,7 +129,7 @@
         </v-row>
       </v-col>
     </v-row>
-  </div>
+  </v-container>
 </template>
 <script>
 import LineChart from '../../charts/LineChart';

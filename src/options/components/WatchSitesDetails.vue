@@ -36,7 +36,7 @@
                   </v-row>
                 </v-col>
               </v-row>
-              <div v-if="sitesIntervals.data.length > 0">
+              <div v-if="sitesIntervals.data.length > 0" style="max-height: 50vh;">
                 <timeline-site-chart :chartSeries="sitesIntervals" :key="sitesIntervals" />
               </div>
               <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes today 🏆</v-card-subtitle>
@@ -147,6 +147,7 @@ export default {
       .subtract('2', 'd')
       .format('YYYY-MM-DD'),
     tableEndDate: moment().format('YYYY-MM-DD'),
+    // watchSitesSorted: null,
     timelineDate: moment().format('YYYY-MM-DD'),
     timelineTimeStart: '00:00',
     timelineTimeEnd: '23:59',
@@ -166,9 +167,12 @@ export default {
     await this.chartDataProcessor.init();
 
     this.tableItems = this.chartDataProcessor.timeFrameWatchSitesUsageFrequency(-3, 0);
+    // this.watchSitesSorted = Array.from(this.tableItems.sort((a,b) => {return b["total"] - a["total"]}), x => x["name"])
+
     var start = moment(this.timelineDate + ' ' + this.timelineTimeStart).toDate();
     var end = moment(this.timelineDate + ' ' + this.timelineTimeEnd).toDate();
-    this.sitesIntervals = this.chartDataProcessor.daySitesTimeline(new Date(this.timelineDate), [start, end], null, true);
+    this.sitesIntervals = this.chartDataProcessor.daySitesTimeline(moment(this.timelineDate).toDate(), [start, end], null, true);
+
     this.sitesVisitsScatter = this.chartDataProcessor.weekSiteVisitScatter(null, null, true);
     this.heatmapData = this.chartDataProcessor.weekSiteVisitHeatMap(null, null, true);
     this.heatmapSitesItems = Object.keys(this.heatmapData);

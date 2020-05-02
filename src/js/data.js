@@ -876,7 +876,7 @@ export class ChartData {
       });
       const color = borderColors.shift();
       datasets.push({
-        label: `week of ${fn.getDateString(date)}`,
+        label: isMonth ? `month of ${fn.getDateString(date)}` : `week of ${fn.getDateString(date)}`,
         borderColor: color,
         backgroundColor: backgroundColors.shift(),
         pointBorderColor: color,
@@ -966,17 +966,20 @@ export class ChartData {
    */
   daySitesTimeline(date, dayFrame, urls, watchSites) {
     if (date == null) date = this.today;
-    if (watchSites) {
+    if (urls) {
+      var data = this.TimeTable.getDaySiteVisits(date, dayFrame, urls);
+      return {
+        name: fn.getDateString(date),
+        data: data,
+      };
+    } else if (watchSites) {
       return {
         name: fn.getDateString(date),
         data: this.WatchSites.getDaySiteVisits(date, dayFrame),
       };
+    } else {
+      return {};
     }
-    var data = this.TimeTable.getDaySiteVisits(date, dayFrame, urls);
-    return {
-      name: fn.getDateString(date),
-      data: data,
-    };
   }
 
   daysSitesTimeline(timeFrame) {
@@ -1218,10 +1221,16 @@ export class ChartData {
       dataseries[url] = [];
       for (var hour = 0; hour < 24; hour++) {
         if (hour in urlVisits[url]) {
-          var hourObj = { name: hour, data: [] };
+          var hourObj = {
+            name: hour,
+            data: [],
+          };
           for (var dayCounter = 0; dayCounter < urlVisits[url][hour].length; dayCounter++) {
             const minutesInDay = urlVisits[url][hour][dayCounter];
-            hourObj.data.push({ x: timeFrame[dayCounter], y: minutesInDay });
+            hourObj.data.push({
+              x: timeFrame[dayCounter],
+              y: minutesInDay,
+            });
           }
           dataseries[url].push(hourObj);
         }

@@ -1,5 +1,6 @@
 <template>
-  <v-container class="grey lighten-5">
+  <v-container fluid fill-height>
+    <h2 class="font-weight-light">Usage Pattern</h2>
     <v-row>
       <v-col cols="4">
         <v-menu>
@@ -8,7 +9,6 @@
           </template>
           <v-date-picker v-model="date1" no-title></v-date-picker>
         </v-menu>
-        <timeline-chart v-if="loaded" :data="timelines[0]" :key="timelines[0]" />
       </v-col>
       <v-col cols="4">
         <v-menu>
@@ -17,7 +17,6 @@
           </template>
           <v-date-picker v-model="date2" no-title></v-date-picker>
         </v-menu>
-        <timeline-chart v-if="loaded" :data="timelines[1]" :key="timelines[1]" />
       </v-col>
       <v-col cols="4">
         <v-menu>
@@ -26,6 +25,16 @@
           </template>
           <v-date-picker v-model="date3" no-title></v-date-picker>
         </v-menu>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="4">
+        <timeline-chart v-if="loaded" :data="timelines[0]" :key="timelines[0]" />
+      </v-col>
+      <v-col cols="4">
+        <timeline-chart v-if="loaded" :data="timelines[1]" :key="timelines[1]" />
+      </v-col>
+      <v-col cols="4">
         <timeline-chart v-if="loaded" :data="timelines[2]" :key="timelines[2]" />
       </v-col>
     </v-row>

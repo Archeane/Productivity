@@ -20,11 +20,13 @@ export default {
           type: 'rangeBar',
           defaultLocale: 'en',
           width: '90%',
+          height: '80%',
         },
         plotOptions: {
           bar: {
             horizontal: true,
-            barHeight: '80%',
+            barHeight: '60%',
+            columnWidth: '60%',
           },
         },
         xaxis: {

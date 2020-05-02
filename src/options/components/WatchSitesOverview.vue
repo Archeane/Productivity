@@ -5,10 +5,10 @@
       <v-btn :value="false" text>week</v-btn>
       <v-btn :value="true" text>month</v-btn>
     </v-btn-toggle>
-    <v-col cols="12" style="max-height: 34vh;">
+    <v-col cols="12" style="max-height: 33vh;">
       <v-row>
         <v-col cols="3">
-          <v-card height="31.5vh">
+          <v-card height="30vh">
             <v-card-title>
               <span class="subtitle-2 font-weight-light">Total time:</span>
               <span class="headline font-weight-bold" style="margin-left: auto;">{{ totalTime }}</span>
@@ -23,17 +23,21 @@
             </v-card-actions>
           </v-card>
         </v-col>
-        <v-col cols="9" style="margin-top: -1vh;">
+        <v-col cols="9" style="margin-top: -2vh;">
+          <h3>Watch Sites Usage Ranking</h3>
           <v-row :key="topSites">
             <v-col v-for="usage in topSites" :key="usage.url" cols="4">
-              <v-card>
-                <v-list-item two-line>
+              <v-card max-height="15vh">
+                <v-list-item three-line>
                   <v-list-item-content>
-                    <v-list-item-title class="headline mb-1"> {{ usage.total }} </v-list-item-title>
-                    <v-list-item-subtitle> {{ usage.url }} </v-list-item-subtitle>
+                    <div class="overline mb-4">{{ usage.url }}</div>
+                    <v-list-item-title class="headline mb-1">{{ usage.total }}</v-list-item-title>
+                    <v-list-item-subtitle>+ 20% from last week</v-list-item-subtitle>
                   </v-list-item-content>
-                  <v-list-item-avatar tile size="30" :src="usage.favicon"></v-list-item-avatar>
                 </v-list-item>
+                <!-- <h3 class="display-1 font-weight-bold ml-5 pl-3 mt-2">#{{index+1}}</h3> -->
+                <!-- <v-card-subtitle>{{ usage.url }}</v-card-subtitle> -->
+                <!-- <v-img :src="usage.favicon" class="ml-auto mr-5 mt-3" max-height="32" max-width="32"></v-img> -->
               </v-card>
             </v-col>
           </v-row>
@@ -57,7 +61,7 @@
               <v-tab>Watch sites time</v-tab>
               <v-tab>Total time</v-tab>
               <v-tab-item>
-                <v-container fluid>
+                <v-container fluid fillheight>
                   <line-chart v-if="loaded" :chartdata="weekSitesLine" :key="weekSitesLine" />
                 </v-container>
               </v-tab-item>
@@ -137,6 +141,10 @@ export default {
           datalabels: {
             display: false,
           },
+        },
+        title: {
+          display: true,
+          text: 'Combined time of all watch sites',
         },
         responsive: true,
         maintainAspectRatio: false,
