@@ -3,38 +3,14 @@
 </template>
 
 <script>
-/*
-  import {DataSet, Timeline} from 'vis-timeline/standalone';
-  import "vis-timeline/styles/vis-timeline-graph2d.css";
-    
-  export default {
-      props: {
-          items: {type: Array, default: []},
-          options: {type: Object, default: {width: "500px", height: "300px"}},
-      },
-      data: function() {
-          return {
-              timeline: null,
-              items: this.items,
-              options: this.options
-          };
-      },
-      mounted: function() {
-          var container = document.getElementById('timeline');
-          this.timeline = new Timeline(container, new DataSet(this.items), this.options)
-          this.timeline.focus(0)
-          this.timeline.fit("linear");
-          this.timeline.getCustomTime(new Date());
-      },
-  };
-*/
-
 import TimelinesChart from 'timelines-chart';
 import moment from 'moment';
 
 export default {
   props: {
     data: { type: Array, default: [] },
+    width: { type: Number, default: 600 },
+    height: { type: Number, default: 640 },
   },
   data: function() {
     return {
@@ -56,7 +32,7 @@ export default {
           hourData[j]['timeRange'][0].setHours(0);
         }
         chartData.push({
-          group: i.toString(),
+          group: moment(i, ['HH']).format('h A'),
           data: [
             {
               label: '',
@@ -65,15 +41,17 @@ export default {
           ],
         });
       }
+
       var container = document.getElementById('timeline');
 
       const myChart = TimelinesChart();
       myChart
         .data(chartData)
         .zQualitative(true)
-        .width(600)
+        .width(this.width)
+        .maxHeight(this.height)
         .maxLineHeight(20)
-        .useUtc(true)
+        //.useUtc(true)
         .xTickFormat(x => {
           return x.getMinutes();
         })
@@ -82,8 +60,4 @@ export default {
   },
 };
 </script>
-<style>
-#timeline {
-  margin-left: -50px;
-}
-</style>
+<style></style>

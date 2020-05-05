@@ -141,7 +141,7 @@ import moment from 'moment';
 import DashboardLineChartContainer from './DashboardLineChartContainer';
 
 export default {
-  name: 'VueChartJS',
+  name: 'Dashboard',
   data: () => ({
     chartDataProcessor: new ChartData(),
     loaded: false,

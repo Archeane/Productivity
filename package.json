@@ -28,7 +28,7 @@
     "jquery": "^3.4.1",
     "moment": "^2.24.0",
     "sass-loader": "^7.3.1",
-    "timelines-chart": "^2.9.0",
+    "timelines-chart": "git+https://git@github.com/Archeane/timelines-chart.git",
     "vue": "^2.6.10",
     "vue-apexcharts": "^1.5.3",
     "vue-chartjs": "^3.5.0",

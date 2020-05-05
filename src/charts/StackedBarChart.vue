@@ -1,7 +1,7 @@
 <script>
 import { HorizontalBar } from 'vue-chartjs';
-import Chart from 'chart.js';
 import ChartJsPluginDataLabels from 'chartjs-plugin-datalabels';
+import Chart from 'chart.js';
 import moment from 'moment';
 export default {
   extends: HorizontalBar,
@@ -18,8 +18,9 @@ export default {
           datalabels: {
             formatter: function(value, context) {
               console.log(value, context);
+              return context.chart.data.labels[context.dataIndex];
             },
-            display: false,
+            // display: true,
           },
         },
         legend: {
@@ -29,11 +30,10 @@ export default {
           mode: 'label',
           callbacks: {
             label: function(t, d) {
-              if (t.yLabel != 0) {
-                var h = Math.floor(t.yLabel / 60),
-                  m = t.yLabel % 60;
-                return `${d.datasets[t.datasetIndex].label}: ${h} hrs ${m} mins`;
-              }
+              var h = Math.floor(t.x / 60),
+                m = Math.floor(t.x % 60);
+              if (h > 0) return `${d.datasets[t.datasetIndex].label}: ${h} hrs ${m} mins`;
+              else return `${d.datasets[t.datasetIndex].label}: ${m} mins`;
             },
           },
         },
@@ -47,6 +47,7 @@ export default {
                 display: false,
               },
               ticks: {
+                reverse: true,
                 callback: function(label, index, labels) {
                   return moment(label).format('MM/DD');
                 },

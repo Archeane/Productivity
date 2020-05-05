@@ -9,15 +9,19 @@ export default {
     apexcharts: VueApexCharts,
   },
   props: {
-    chartSeries: { type: Array },
-    chartLabels: { type: Array },
+    chartSeries: Array,
+    chartLabels: Array,
   },
   data: function() {
+    console.log('???');
+    // console.log(this.chartSeries);
+    // console.log(this.chartLabels);
     return {
       chartOptions: {
-        labels: this.chartLabels,
+        labels: this.chartLabels, //["luoxia", "youtube", "stackoverflow", "google", "personality", "vueifyjs"],
         chart: {
           type: 'donut',
+          height: '50%',
         },
         plotOptions: {
           pie: {
@@ -48,13 +52,13 @@ export default {
             show: true,
           },
         },
-        responsive: [
-          {
-            breakpoint: 480,
-          },
-        ],
+        // responsive: [
+        //   {
+        //     breakpoint: 480,
+        //   },
+        // ],
       },
-      series: this.chartSeries,
+      series: this.chartSeries, //[84,37,10,9,2,1]
     };
   },
 };

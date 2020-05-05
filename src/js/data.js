@@ -78,25 +78,6 @@ class TimeTableData {
 
   /**
    *
-   * @param {*} day
-   * @param {*} timeTable
-   * @returns sorted url => total_time_today
-   */
-  getDayUsageSorted(day) {
-    if (!(day in this.timeTable)) {
-      return {};
-    }
-    const dayUsage = {};
-    Object.entries(this.timeTable[day])
-      .sort((a, b) => b[1]['total'] - a[1]['total'])
-      .forEach((url, usage) => {
-        dayUsage[url] = Math.floor(usage['total'] / 60);
-      });
-    return dayUsage;
-  }
-
-  /**
-   *
    * @param {String} day
    * @param {[Date, Date]} dayFrame
    * @param {Array} urls
@@ -385,6 +366,21 @@ class WatchSitesData {
     return this.watchSites;
   }
 
+  timeFrameTotalTime(timeFrame) {
+    var timeFrameUsage = Array(timeFrame.length).fill(0);
+    for (var i = 0; i < timeFrame.length; i++) {
+      var day = timeFrame[i];
+      if (day in this.timeTable) {
+        this.watchSites.forEach(url => {
+          if (url in this.timeTable[day]) {
+            timeFrameUsage[i] += Math.floor(this.timeTable[day][url]['total'] / 60);
+          }
+        });
+      }
+    }
+    return timeFrameUsage;
+  }
+
   /**
    *
    * @param {String} day
@@ -447,21 +443,6 @@ class WatchSitesData {
           weekUsage[url][i] = Math.floor(this.timeTable[day][url]['total'] / 60);
         }
       }
-    });
-    return weekUsage;
-  }
-
-  /**
-   *
-   * @param {Array} week
-   * @returns {Number} total minutes on watched sites this week
-   */
-  weekWatchSitesTotalUsage(week) {
-    var weekUsage = 0;
-    this.watchSites.forEach(url => {
-      week.forEach(day => {
-        if (day in this.timeTable && url in this.timeTable[day]) weekUsage += Math.floor(this.timeTable[day][url]['total'] / 60);
-      });
     });
     return weekUsage;
   }
@@ -679,7 +660,7 @@ export class ChartData {
 
   timeFrameWatchSitesTotalUsage(start, end) {
     const timeFrame = this.getTimeFrame(start, end);
-    return this.WatchSites.weekWatchSitesTotalUsage(timeFrame);
+    return this.WatchSites.timeFrameTotalTime(timeFrame);
   }
 
   // =============================Line charts =========================================
@@ -784,15 +765,21 @@ export class ChartData {
   // ============================= Pie charts =========================================
 
   dayChartPieData(date, max = 15) {
-    if (date == null) {
-      date = this.today;
-    }
-    const dayUsage = this.TimeTable.getDayUsageSorted(date);
-    let labels = Object.keys(dayUsage).slice(0, max);
-    let data = Object.values(dayUsage).slice(0, max);
+    if (date == null) date = moment(this.today).format('YYYY-MM-DD');
+    else date = moment(date).format('YYYY-MM-DD');
+    var dayUsage = this.TimeTable.getDayUsage(date);
+    dayUsage = Object.entries(dayUsage)
+      .sort((a, b) => b[1]['total'] - a[1]['total'])
+      .slice(0, max);
+    var labels = dayUsage.map(arr => {
+      return arr[0];
+    });
+    var series = dayUsage.map(arr => {
+      return Math.floor(arr[1]['total'] / 60);
+    });
     return {
       labels: labels,
-      series: data,
+      series: series,
     };
     // return {
     //     labels: labels,
@@ -900,15 +887,15 @@ export class ChartData {
    * end - start <= 7
    * @return day -> {url: total time on the day} filtered
    */
-  siteUsageStackedBarData(start, end) {
+  siteUsageStackedBarData(start, end, watchSites) {
     const timeFrame = this.getTimeFrame(start, end);
     let weekUsage = {};
     let weekTotalTime = 0;
-    let dayTotalTimes = [0, 0, 0, 0, 0, 0, 0];
+    let dayTotalTimes = Array(timeFrame.length).fill(0);
     for (var i = 0; i < timeFrame.length; i++) {
       const dayUsage = this.TimeTable.getDayUsage(timeFrame[i]);
       for (let [url, usage] of Object.entries(dayUsage)) {
-        if (!(url in weekUsage)) weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
+        if (!(url in weekUsage)) weekUsage[url] = Array(timeFrame.length).fill(0);
         const total = Math.floor(usage['total'] / 60);
         weekUsage[url][i] = total;
         weekTotalTime += total;
@@ -917,6 +904,31 @@ export class ChartData {
     }
     const colors = this.colors(); //Object.keys(weekUsage).length);
     let datasets = [];
+    const datalabels = {
+      formatter: function(value, context) {
+        if (value > 1) {
+          const url = context.dataset.label;
+          return url.replace(/([.]\w+)$/, '').replace(/^www\./, '');
+        } else {
+          return '';
+        }
+      },
+    };
+    if (watchSites) {
+      const urls = this.WatchSites.getWatchSites();
+      urls.forEach(url => {
+        datasets.push({
+          label: url,
+          backgroundColor: colors.shift(),
+          data: weekUsage[url],
+        });
+      });
+      return {
+        labels: timeFrame,
+        datasets: datasets,
+        datalabels: datalabels,
+      };
+    }
     const weekMinutesThreshold = Math.floor(weekTotalTime / 100);
     const daysThreshold = Math.floor((end - start) / 3);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
@@ -937,16 +949,7 @@ export class ChartData {
           label: url,
           backgroundColor: colors.shift(),
           data: usageArr,
-          datalabels: {
-            formatter: function(value, context) {
-              if (value > 1) {
-                const url = context.dataset.label;
-                return url.replace(/([.]\w+)$/, '').replace(/^www\./, '');
-              } else {
-                return '';
-              }
-            },
-          },
+          datalabels: datalabels,
         });
       }
     }
@@ -1079,6 +1082,35 @@ export class ChartData {
   }
 
   // ============================= Table =========================================
+
+  dayUsageTable(date, watchSite) {
+    if (date == null) date = this.today;
+    const dayUsage = this.TimeTable.getDayUsage(moment(date).format('YYYY-MM-DD'));
+    var data = [],
+      urls;
+    if (watchSite) urls = this.getWatchSites();
+    for (let [url, usage] of Object.entries(dayUsage)) {
+      if (usage['total'] / 60 > 1) {
+        if (watchSite) {
+          if (url in urls)
+            data.push({
+              name: url,
+              total: Math.floor(usage['total'] / 60),
+              frequency: usage['visits'].length - 2,
+            });
+        } else {
+          data.push({
+            name: url,
+            total: Math.floor(usage['total'] / 60),
+            frequency: usage['visits'].length - 2,
+          });
+        }
+      }
+    }
+    return data.sort((a, b) => {
+      return b['total'] - a['total'];
+    });
+  }
 
   weekSitesUsageFrequency(date) {
     if (date == null) date = this.today;

@@ -453,6 +453,15 @@ timeIntervals.save = window.setInterval(function() {
 
 // //check if current url is contained in blocked_sites
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message.request == 'getCurrentTab') {
+    chrome.tabs.query({ currentWindow: true, active: true }, tabs => {
+      console.log(tabs);
+      sendResponse({ domain: fn.parseDomainFromUrl(tabs[0].url), url: tabs[0].url });
+    });
+  }
+  if (message.request == 'redirectOptions') {
+    chrome.tabs.create({ url: `options/options.html#/${message.tab}` });
+  }
   if (message.request == 'getWatchSites') {
     sendResponse({ done: watchSites });
   }

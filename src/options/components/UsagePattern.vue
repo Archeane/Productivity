@@ -9,6 +9,7 @@
           </template>
           <v-date-picker v-model="date1" no-title></v-date-picker>
         </v-menu>
+        <timeline-chart v-if="loaded" :data="timelines[0]" :key="timelines[0]" />
       </v-col>
       <v-col cols="4">
         <v-menu>
@@ -17,6 +18,7 @@
           </template>
           <v-date-picker v-model="date2" no-title></v-date-picker>
         </v-menu>
+        <timeline-chart v-if="loaded" :data="timelines[1]" :key="timelines[1]" />
       </v-col>
       <v-col cols="4">
         <v-menu>
@@ -25,16 +27,6 @@
           </template>
           <v-date-picker v-model="date3" no-title></v-date-picker>
         </v-menu>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="4">
-        <timeline-chart v-if="loaded" :data="timelines[0]" :key="timelines[0]" />
-      </v-col>
-      <v-col cols="4">
-        <timeline-chart v-if="loaded" :data="timelines[1]" :key="timelines[1]" />
-      </v-col>
-      <v-col cols="4">
         <timeline-chart v-if="loaded" :data="timelines[2]" :key="timelines[2]" />
       </v-col>
     </v-row>
@@ -54,13 +46,14 @@ export default {
     loaded: false,
     timelines: [[], [], []],
     date1: moment().format('YYYY-MM-DD'),
-    date2: null,
-    date3: null,
+    date2: moment().format('YYYY-MM-DD'),
+    date3: moment().format('YYYY-MM-DD'),
   }),
   async mounted() {
     this.loaded = false;
     await this.chartDataProcessor.init();
     this.timelines[0] = this.chartDataProcessor.dayTimeline(moment(this.date1).toDate());
+    console.log(this.timelines[0]);
     // this.timelines[1] = this.chartDataProcessor.dayTimeline(moment(this.date2).toDate());
     // this.timelines[2] = this.chartDataProcessor.dayTimeline(moment(this.date3).toDate());
     this.loaded = true;
@@ -79,7 +72,6 @@ export default {
   methods: {
     changeTimeline: function(n, data) {
       this.timelines[n] = data;
-      console.log(node);
     },
     minutesToHours: function(minutes) {
       var h = Math.round(minutes / 60),

@@ -120,7 +120,11 @@ export default {
     loadData: function() {
       var days;
       this.isMonth ? (days = 30) : (days = 7);
-      this.totalTime = this.minutesToHours(this.chartDataProcessor.timeFrameWatchSitesTotalUsage(days * -1, 0));
+      this.totalTime = this.minutesToHours(
+        this.chartDataProcessor.timeFrameWatchSitesTotalUsage(days * -1, 0).reduce((a, b) => {
+          return a + b;
+        })
+      );
       this.halfDonut = this.chartDataProcessor.timeFrameWatchSitesHalfDonut(days * -1, 0);
       var topSites = this.chartDataProcessor
         .topWatchSites(days * -1, 0)
