@@ -5,8 +5,8 @@
       <v-col cols="6">
         <v-row>
           <v-col cols="12">
-            <v-card v-if="loaded" max-height="60vh">
-              <v-row dense style="height: 6vh;">
+            <v-card v-if="loaded" max-height="55vh">
+              <v-row dense style="height: 5vh;">
                 <v-col cols="6">
                   <v-row align="start" justify="start">
                     <v-card-title class="ml-3">Day Timeline</v-card-title>
@@ -37,7 +37,7 @@
                 </v-col>
               </v-row>
               <div v-if="sitesIntervals.data.length > 0" style="max-height: 50vh;">
-                <timeline-site-chart :chartSeries="sitesIntervals" :key="sitesIntervals" />
+                <timeline-site-chart :chartSeries="sitesIntervals" :key="sitesIntervals" style="height: 50vh;" />
               </div>
               <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes today 🏆</v-card-subtitle>
             </v-card>
@@ -46,19 +46,13 @@
         <v-row>
           <v-col cols="12">
             <v-card>
-              <v-row align="center">
+              <v-row align="start" class="ml-1 mr-1" style="max-height: 6vh;">
                 <v-card-title>Usage Stats</v-card-title>
                 <v-menu>
                   <template v-slot:activator="{ on }">
-                    <v-text-field :value="tableStartDate" v-on="on" dense readonly outlined style="max-width: 6.5rem; margin-right: -10rem;" class="mt-3 ml-auto"></v-text-field>
+                    <v-text-field v-on="on" dense readonly outlined v-model="tableDateRangeText" style="max-width: 13.5rem;" class="ml-auto mt-2 mr-2"></v-text-field>
                   </template>
-                  <v-date-picker v-model="tableStartDate" no-title></v-date-picker>
-                </v-menu>
-                <v-menu>
-                  <template v-slot:activator="{ on }">
-                    <v-text-field :value="tableEndDate" v-on="on" dense readonly outlined style="max-width: 6.5rem;" class="mt-3 ml-auto mr-5"></v-text-field>
-                  </template>
-                  <v-date-picker v-model="tableEndDate" no-title></v-date-picker>
+                  <v-date-picker v-model="tableDateRange" no-title range></v-date-picker>
                 </v-menu>
               </v-row>
               <v-data-table max-height="34vh" v-if="loaded" :headers="tableHeaders" :items="tableItems" :key="tableItems" multi-sort class="elevation-1" dense></v-data-table>
@@ -68,32 +62,13 @@
       </v-col>
       <v-col cols="6">
         <v-card v-if="loaded" max-height="90vh">
-          <!-- <v-row class="ml-2" dense style="max-height: 6vh;">
-            <v-card-title>Watch Sites Visits</v-card-title>
-
-            <v-card-title class="ml-auto">Week of</v-card-title>
-            <v-menu>
-              <template v-slot:activator="{ on }">
-                <v-text-field
-                  :value="scatterDate"
-                  v-on="on"
-                  dense
-                  readonly
-                  outlined
-                  style="max-width: 6.5rem;"
-                  class="mr-5 mt-5"
-                ></v-text-field>
-              </template>
-              <v-date-picker v-model="scatterDate" no-title></v-date-picker>
-            </v-menu>
-          </v-row>-->
           <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
             <v-tab>Visit Frequency</v-tab>
             <v-tab>Visit Density</v-tab>
             <v-menu>
               <template v-slot:activator="{ on }">
-                <v-text-field :value="visitCardDate" v-on="on" dense readonly outlined style="max-width: 6.5rem;" class="ml-auto mt-2 mr-2"></v-text-field>
-                <span class="headline ml-auto mr-0 mt-3">Week of</span>
+                <v-text-field :value="visitCardDate" v-on="on" dense readonly outlined style="max-width: 6.5rem;" class="mt-2 mr-2"></v-text-field>
+                <span class="title ml-auto mr-2 mt-3" style="color: black">Week of</span>
               </template>
               <v-date-picker v-model="visitCardDate" no-title></v-date-picker>
             </v-menu>
@@ -143,10 +118,12 @@ export default {
       { text: 'Avg visits per day', value: 'freqDay' },
       { text: 'Avg mins btw visits', value: 'timeBtwVisit' },
     ],
-    tableStartDate: moment()
-      .subtract('2', 'd')
-      .format('YYYY-MM-DD'),
-    tableEndDate: moment().format('YYYY-MM-DD'),
+    tableDateRange: [
+      moment()
+        .subtract('2', 'd')
+        .format('YYYY-MM-DD'),
+      moment().format('YYYY-MM-DD'),
+    ],
     // watchSitesSorted: null,
     timelineDate: moment().format('YYYY-MM-DD'),
     timelineTimeStart: '00:00',
@@ -191,11 +168,8 @@ export default {
     timelineTimeEnd: function(val) {
       this.loadTimeline(this.timelineDate, this.timelineTimeStart, val);
     },
-    tableStartDate: function(val) {
-      this.tableItems = this.chartDataProcessor.timeFrameWatchSitesUsageFrequency(moment(val).toDate(), moment(this.tableEndDate).toDate());
-    },
-    tableEndDate: function(val) {
-      this.tableItems = this.chartDataProcessor.timeFrameWatchSitesUsageFrequency(moment(this.tableStartDate).toDate(), moment(val).toDate());
+    tableDateRange: function(arr) {
+      this.tableItems = this.chartDataProcessor.timeFrameWatchSitesUsageFrequency(moment(arr[0]).toDate(), moment(arr[1]).toDate());
     },
     visitCardDate: function(val) {
       if (this.heatmapSite) {
@@ -222,6 +196,11 @@ export default {
       var h = Math.round(minutes / 60),
         m = minutes % 60;
       return `${h} hrs ${m} mins`;
+    },
+  },
+  computed: {
+    tableDateRangeText() {
+      return this.tableDateRange.join(' ~ ');
     },
   },
   components: { TimelineSiteChart, ScatterChart, HeatMap },

@@ -1,5 +1,5 @@
 <template>
-  <apexcharts type="donut" :options="chartOptions" :series="series"></apexcharts>
+  <apexcharts type="donut" :options="chartOptions" :series="series" height="250"></apexcharts>
 </template>
 <script>
 import VueApexCharts from 'vue-apexcharts';
@@ -13,15 +13,11 @@ export default {
     chartLabels: Array,
   },
   data: function() {
-    console.log('???');
-    // console.log(this.chartSeries);
-    // console.log(this.chartLabels);
     return {
       chartOptions: {
-        labels: this.chartLabels, //["luoxia", "youtube", "stackoverflow", "google", "personality", "vueifyjs"],
+        labels: this.chartLabels,
         chart: {
           type: 'donut',
-          height: '50%',
         },
         plotOptions: {
           pie: {
@@ -38,9 +34,21 @@ export default {
         },
         dataLabels: {
           formatter(val, opts) {
-            const name = opts.w.globals.labels[opts.seriesIndex];
-            const minutes = opts.w.globals.series[opts.seriesIndex].toString() + ' mins';
-            return [name, minutes];
+            //console.log(val, opts);
+            const name = opts.w.globals.labels[opts.seriesIndex].replace(/([.]\w+)$/, '').replace(/^www\./, '');
+            // const minutes = opts.w.globals.series[opts.seriesIndex].toString() + ' mins';
+            return name;
+          },
+        },
+        tooltip: {
+          y: {
+            formatter: (val, opts) => {
+              const total = opts.globals.series.reduce((a, b) => {
+                return a + b;
+              });
+              const percentage = Math.floor((val / total) * 100);
+              return `${val} mins, ${percentage} %`;
+            },
           },
         },
         theme: {
@@ -52,13 +60,8 @@ export default {
             show: true,
           },
         },
-        // responsive: [
-        //   {
-        //     breakpoint: 480,
-        //   },
-        // ],
       },
-      series: this.chartSeries, //[84,37,10,9,2,1]
+      series: this.chartSeries,
     };
   },
 };

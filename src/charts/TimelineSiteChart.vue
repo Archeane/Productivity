@@ -19,7 +19,6 @@ export default {
         chart: {
           type: 'rangeBar',
           defaultLocale: 'en',
-          width: '90%',
           height: '80%',
         },
         plotOptions: {

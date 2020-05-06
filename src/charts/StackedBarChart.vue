@@ -16,22 +16,18 @@ export default {
       options: {
         plugins: {
           datalabels: {
-            formatter: function(value, context) {
-              console.log(value, context);
-              return context.chart.data.labels[context.dataIndex];
-            },
-            // display: true,
+            display: false,
           },
         },
         legend: {
           display: false,
         },
         tooltips: {
-          mode: 'label',
+          mode: 'nearest',
           callbacks: {
             label: function(t, d) {
-              var h = Math.floor(t.x / 60),
-                m = Math.floor(t.x % 60);
+              var h = Math.floor(parseInt(t.value) / 60),
+                m = Math.floor(parseInt(t.value) % 60);
               if (h > 0) return `${d.datasets[t.datasetIndex].label}: ${h} hrs ${m} mins`;
               else return `${d.datasets[t.datasetIndex].label}: ${m} mins`;
             },

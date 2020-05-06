@@ -53,7 +53,7 @@ export default {
     this.loaded = false;
     await this.chartDataProcessor.init();
     this.timelines[0] = this.chartDataProcessor.dayTimeline(moment(this.date1).toDate());
-    console.log(this.timelines[0]);
+    // console.log(this.timelines[0]);
     // this.timelines[1] = this.chartDataProcessor.dayTimeline(moment(this.date2).toDate());
     // this.timelines[2] = this.chartDataProcessor.dayTimeline(moment(this.date3).toDate());
     this.loaded = true;

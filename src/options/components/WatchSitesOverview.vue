@@ -32,7 +32,7 @@
                   <v-list-item-content>
                     <div class="overline mb-4">{{ usage.url }}</div>
                     <v-list-item-title class="headline mb-1">{{ usage.total }}</v-list-item-title>
-                    <v-list-item-subtitle>+ 20% from last week</v-list-item-subtitle>
+                    <div v-html="renderChange(usage.change[0])"></div>
                   </v-list-item-content>
                 </v-list-item>
                 <!-- <h3 class="display-1 font-weight-bold ml-5 pl-3 mt-2">#{{index+1}}</h3> -->
@@ -126,14 +126,28 @@ export default {
         })
       );
       this.halfDonut = this.chartDataProcessor.timeFrameWatchSitesHalfDonut(days * -1, 0);
+      this.topSites = [];
       var topSites = this.chartDataProcessor
         .topWatchSites(days * -1, 0)
         .slice(0, 6)
         .sort((a, b) => {
           return b[1] - a[1];
         });
-      topSites.forEach(site => this.topSites.push({ url: site[0], total: this.minutesToHours(site[1]), favicon: this.getFavIconUrl(site[0]) }));
-      console.log(this.topSites);
+      var lastWeekTopSites = this.chartDataProcessor.topWatchSites(days * -2, days * -1);
+      topSites.forEach(site =>
+        this.topSites.push({
+          url: site[0],
+          total: this.minutesToHours(site[1]),
+          favicon: this.getFavIconUrl(site[0]),
+          change: lastWeekTopSites
+            .filter(value => {
+              return value[0] == site[0];
+            })
+            .map(value => {
+              return Math.floor(((site[1] - value[1]) / value[1]) * 100);
+            }),
+        })
+      );
 
       this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3, null, this.isMonth);
 
@@ -178,13 +192,17 @@ export default {
         },
       };
     },
-    fetchWeeksRadar: function() {
-      this.weeksRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(parseInt(select.weeksRadar));
-    },
     minutesToHours: function(minutes) {
       var h = Math.round(minutes / 60),
         m = minutes % 60;
       return `${h} hrs ${m} mins`;
+    },
+    renderChange: function(change) {
+      if (parseInt(change) < 0) {
+        return `<span style="color: green;"> ${change}% from last week</span>`;
+      } else {
+        return `<span style="color: red;"> +${change}% from last week</span>`;
+      }
     },
     getFavIconUrl: function(domain) {
       return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}`;

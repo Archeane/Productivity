@@ -1077,8 +1077,11 @@ export class ChartData {
   dayTimeline(day = this.today) {
     const date = moment(day).format('YYYY-MM-DD');
     const visits = this.TimeTable.getDayVisits(date);
-    var intByHour = this.breakDayToHoursIntervals(visits);
-    return intByHour;
+    if (visits.length > 0) {
+      var intByHour = this.breakDayToHoursIntervals(visits);
+      return intByHour;
+    }
+    return null;
   }
 
   // ============================= Table =========================================

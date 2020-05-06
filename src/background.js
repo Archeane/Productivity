@@ -455,8 +455,7 @@ timeIntervals.save = window.setInterval(function() {
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.request == 'getCurrentTab') {
     chrome.tabs.query({ currentWindow: true, active: true }, tabs => {
-      console.log(tabs);
-      sendResponse({ domain: fn.parseDomainFromUrl(tabs[0].url), url: tabs[0].url });
+      if (tabs.length > 1 && url in tabs[0]) sendResponse({ domain: fn.parseDomainFromUrl(tabs[0].url), url: tabs[0].url });
     });
   }
   if (message.request == 'redirectOptions') {
