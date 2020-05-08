@@ -1,7 +1,7 @@
 <template>
   <div>
     <span v-if="showSuccessMsg">{{ watchSiteUrl }} added to watched sites</span>
-    <v-btn small text @click="addToWatchSites()">Watch Sites</v-btn>
+    <v-btn depressed tile small dark @click="addToWatchSites()"><v-icon left small>fas fa-plus</v-icon>Watch Sites</v-btn>
   </div>
 </template>
 <script>

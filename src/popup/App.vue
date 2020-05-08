@@ -5,16 +5,16 @@
         <v-toolbar-title>Productivity</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn text x-small @click="redirectOptions('')">Stats</v-btn>
-        <v-btn text x-small @click="redirectOptions('usagepattern')">Options</v-btn>
+        <v-btn text x-small @click="redirectOptions('settings')">Options</v-btn>
         <v-btn text x-small>Support</v-btn>
       </v-toolbar>
       <v-divider></v-divider>
-      <v-row>
+      <v-row style="margin-left: auto; margin-right: auto">
         <v-col cols="6">
-          <span class="overline">You are currently on</span>
-          <span class="headline" v-if="loaded">{{ currentTab }}</span>
+          <span style="font-size: 10px;font-color: grey">You are currently on</span>
+          <span style="font-size: 16px; font-weight: 700;" v-if="loaded">{{ currentTabDomain }}</span>
         </v-col>
-        <v-col cols="6">
+        <v-col offset="1" cols="4">
           <add-watch-site-button />
         </v-col>
       </v-row>
@@ -50,7 +50,8 @@
           <timeline-chart v-if="timelineData" :data="timelineData" width="500" height="450" style="margin-left: -2rem;" />
         </v-tab-item>
         <v-tab-item>
-          <span class="overline">Today's total time: </span><span class="display-2 font-weight-black" style="text-align: right;"> {{ minutesToHours(watchSitesTotalTime) }}</span>
+          <span class="overline">Today's total time:</span>
+          <span class="display-2 font-weight-black" style="text-align: right;">{{ minutesToHours(watchSitesTotalTime) }}</span>
           <stacked-bar-chart v-if="loaded" :chartdata="stackedBarData" />
         </v-tab-item>
       </v-tabs>
@@ -66,20 +67,18 @@ import PieChart from '../charts/PieChart';
 import StackedBarChart from '../charts/StackedBarChart';
 
 async function getCurrentTab() {
-  return new Promise((res, rej) => {
-    try {
-      chrome.runtime.sendMessage(
-        {
-          request: 'getCurrentTab',
-        },
-        response => {
-          res(response.domain);
-        }
-      );
-    } catch (err) {
-      rej(err);
-    }
+  return new Promise(res => {
+    chrome.tabs.query({ currentWindow: true, active: true }, tabs => {
+      if (tabs.length > 0 && 'url' in tabs[0]) {
+        res(tabs[0].url);
+      }
+    });
   });
+}
+
+function parseDomainFromUrl(e) {
+  var t, n;
+  return (n = document.createElement('a')), (n.href = e), (t = n.hostname);
 }
 
 export default {
@@ -97,15 +96,14 @@ export default {
   async mounted() {
     this.loaded = false;
     await this.chartData.init();
-    // this.currentTab = await getCurrentTab();
-    // console.log(this.currentTab);
+    this.currentTab = await getCurrentTab();
+
     const pieData = this.chartData.dayChartPieData();
     this.pieSeries = pieData.series;
     this.pieLabels = pieData.labels;
     this.tableData = this.chartData.dayUsageTable();
 
     this.timelineData = this.chartData.dayTimeline(new Date());
-    console.log(this.timelineData);
     this.stackedBarData = this.chartData.siteUsageStackedBarData(-7, 0, true);
     this.watchSitesTotalTime = this.chartData.timeFrameWatchSitesTotalUsage(-1, 0)[0];
 
@@ -124,6 +122,17 @@ export default {
       });
     },
   },
+  computed: {
+    currentTabDomain: function() {
+      var t, n;
+      return (n = document.createElement('a')), (n.href = this.currentTab), (t = n.hostname);
+    },
+  },
   components: { AddWatchSiteButton, PieChart, TimelineChart, StackedBarChart },
 };
 </script>
+<style>
+g.legendG {
+  display: none;
+}
+</style>

@@ -61,6 +61,7 @@ var domains = {},
   },
   settings = {
     idleTime: config.IDLE_TIME_DEFAULT,
+    startOfWeek: config.START_OF_WEEK,
     graphGap: config.GRAPH_GAP_DEFAULT,
     badgeDisplay: config.BADGE_DISPLAY_DEFAULT,
     screenshotInstructionsRead: config.SCREENSHOT_INSTRUCTIONS_READ_DEFAULT,
@@ -74,6 +75,7 @@ var domains = {},
   STORAGE_DATE_START = 'date-start',
   STORAGE_SECONDS_ALLTIME = 'seconds-alltime',
   STORAGE_IDLE_TIME = 'idle-time',
+  STORGAE_START_OF_WEEK = 'start-of-week',
   STORAGE_GRAPH_GAP = 'graph-gap',
   STORAGE_BADGE_DISPLAY = 'badge-display',
   STORAGE_SCREENSHOT_INSTRUCTIONS_READ = 'storage-instructions-read',
@@ -121,7 +123,7 @@ var domains = {},
     watchSites.indexOf(url) === -1 && watchSites.push(url);
   },
   removeWatchSites = function(url) {
-    index = watchSites.indexOf(url);
+    var index = watchSites.indexOf(url);
     index !== -1 && watchSites.splice(index, 1);
   },
   loadBlockedSites = function(cb) {
@@ -270,6 +272,25 @@ var domains = {},
       !0
     );
   },
+  loadStartOfWeek = function() {
+    return (
+      storageLocal.load(STORGAE_START_OF_WEEK, config.START_OF_WEEK, function(e) {
+        (settings.startOfWeek = e[STORGAE_START_OF_WEEK]), saveStartOfWeek(), fn.dcl('Start Of Week loaded: ' + e[STORGAE_START_OF_WEEK]);
+      }),
+      !0
+    );
+  },
+  saveStartOfWeek = function() {
+    return (
+      storageLocal.save(STORGAE_START_OF_WEEK, settings.startOfWeek, function() {
+        fn.dcl('Start Of Week saved: ' + settings.startOfWeek);
+      }),
+      !0
+    );
+  },
+  setStartOfWeek = function(e) {
+    return (settings.startOfWeek = e || config.START_OF_WEEK), config.toggleStartOfWeek(), saveStartOfWeek(), !0;
+  },
   loadIdleTime = function() {
     return (
       storageLocal.load(STORAGE_IDLE_TIME, config.IDLE_TIME_DEFAULT, function(e) {
@@ -287,7 +308,7 @@ var domains = {},
     );
   },
   setIdleTime = function(e) {
-    return (settings.idleTime = parseInt(e) || config.IDLE_TIME_DEFAULT), !0;
+    return (settings.idleTime = parseInt(e) || config.IDLE_TIME_DEFAULT), saveIdleTime(), !0;
   },
   loadGraphGap = function() {
     return (
@@ -410,6 +431,7 @@ fn.dcl('Webtime Tracker - background.js loaded');
 loadDateStart(dates.today);
 loadSecondsAlltime();
 loadIdleTime();
+loadStartOfWeek();
 loadGraphGap();
 loadBadgeDisplay();
 loadScreenshotInstructionsRead();
@@ -453,11 +475,6 @@ timeIntervals.save = window.setInterval(function() {
 
 // //check if current url is contained in blocked_sites
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  if (message.request == 'getCurrentTab') {
-    chrome.tabs.query({ currentWindow: true, active: true }, tabs => {
-      if (tabs.length > 1 && url in tabs[0]) sendResponse({ domain: fn.parseDomainFromUrl(tabs[0].url), url: tabs[0].url });
-    });
-  }
   if (message.request == 'redirectOptions') {
     chrome.tabs.create({ url: `options/options.html#/${message.tab}` });
   }
@@ -466,32 +483,49 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   }
   if (message.request == 'addWatchSite') {
     var url = message.url;
-    if (fn.validUrl(url)) {
-      addWatchSites(fn.parseDomainFromUrl(url));
-      sendResponse({ status: 200, url: fn.parseDomainFromUrl(url) });
-    } else {
-      sendResponse({ status: 400 });
-    }
+    addWatchSites(url);
   }
-  if (message.request == 'deleteWatchSites') {
-    var data = message.data;
-    var response = deleteWatchSites(data.domain);
-    return response == true ? sendResponse({ done: true, message: null }) : sendResponse({ done: false, message: response });
+  if (message.request == 'removeWatchSite') {
+    removeWatchSites(message.url), sendResponse({ status: 200 });
   }
-  if (message.request == 'getBlockedSites') {
-    sendResponse({ done: blockedSites });
+  if (message.request == 'getStartOfWeek') {
+    sendResponse({ data: settings.startOfWeek });
   }
-  if (message.request == 'appendBlockedSites') {
-    var data = message.data;
-    //console.log(data, data.domain, data.limit);
-    appendBlockedSites(data.domain, data.limit);
-    sendResponse({ done: message.data });
+  if (message.request == 'setStartOfWeek') {
+    setStartOfWeek(message.day), sendResponse({ status: 200 });
   }
-  if (message.request == 'deleteBlockedSites') {
-    var data = message.data;
-    var response = deleteBlockedSites(data.domain);
-    return response == true ? sendResponse({ done: true, message: null }) : sendResponse({ done: false, message: response });
+  if (message.request == 'getIdleTime') {
+    sendResponse({ data: settings.idleTime });
   }
+  if (message.request == 'setIdleTime') {
+    setIdleTime(message.time), sendResponse({ status: 200 });
+  }
+  if (message.request == 'clearDataRange') {
+    //clearDataRange(message.start, message.end) ? sendResponse({status: 200}) : sendResponse({status: 400});
+    sendResponse({ status: 200 });
+  }
+  if (message.request == 'exportToCSV') {
+    console.log('export to csv request');
+  }
+  if (message.request == 'clearAllData') {
+    console.log(message);
+    //clearAllGeneratedData(), sendResponse({status: 200});
+  }
+
+  // if (message.request == 'getBlockedSites') {
+  //   sendResponse({ done: blockedSites });
+  // }
+  // if (message.request == 'appendBlockedSites') {
+  //   var data = message.data;
+  //   //console.log(data, data.domain, data.limit);
+  //   appendBlockedSites(data.domain, data.limit);
+  //   sendResponse({ done: message.data });
+  // }
+  // if (message.request == 'deleteBlockedSites') {
+  //   var data = message.data;
+  //   var response = deleteBlockedSites(data.domain);
+  //   return response == true ? sendResponse({ done: true, message: null }) : sendResponse({ done: false, message: response });
+  // }
   if (message.request == 'getTimeTable') {
     sendResponse({ done: timeTable });
   }

@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import WatchSitesOverview from './components/WatchSitesOverview';
 import WatchSitesDetails from './components/WatchSitesDetails';
 import UsagePattern from './components/UsagePattern';
+import Settings from './components/Settings';
 /* eslint-disable no-new */
 
 Vue.use(VueRouter);
@@ -27,6 +28,10 @@ const routes = [
   {
     path: '/usagepattern',
     component: UsagePattern,
+  },
+  {
+    path: '/settings',
+    component: Settings,
   },
 ];
 const router = new VueRouter({

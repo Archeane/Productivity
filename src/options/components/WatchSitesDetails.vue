@@ -1,6 +1,22 @@
 <template>
   <v-container fluid fill-height>
     <h2 class="font-weight-light">Watch Sites Details</h2>
+    <div id="donate">
+      <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+        <input type="hidden" name="cmd" value="_donations" />
+        <input type="hidden" name="business" value="EF6BJM8AY86QA" />
+        <input type="hidden" name="currency_code" value="USD" />
+        <input
+          type="image"
+          src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif"
+          border="0"
+          name="submit"
+          title="PayPal - The safer, easier way to pay online!"
+          alt="Donate with PayPal button"
+        />
+        <img alt border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+      </form>
+    </div>
     <v-row>
       <v-col cols="6">
         <v-row>
@@ -103,7 +119,6 @@ import LineChart from '../../charts/LineChart';
 import HeatMap from '../../charts/HeatMap';
 
 export default {
-  name: 'VueChartJS',
   data: () => ({
     search: '',
     tableHeaders: [

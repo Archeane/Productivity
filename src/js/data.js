@@ -6,6 +6,7 @@ import moment from 'moment';
 import { colors } from 'vuetify/lib';
 
 var fn = new Fn();
+var config = new Config();
 async function getTimeTable() {
   return new Promise((res, rej) => {
     try {
@@ -23,7 +24,7 @@ async function getTimeTable() {
   });
 }
 
-async function getWatchSites() {
+export async function getWatchSites() {
   return new Promise((res, rej) => {
     try {
       chrome.runtime.sendMessage(
@@ -47,6 +48,128 @@ export async function addWatchSite(url) {
         {
           request: 'addWatchSite',
           url: url,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function removeWatchSite(url) {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'removeWatchSite',
+          url: url,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function getStartOfWeek() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'getStartOfWeek',
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function setStartOfWeek(day) {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'setStartOfWeek',
+          day: day,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function getIdleTime() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'getIdleTime',
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function setIdleTime(time) {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'setIdleTime',
+          time: time,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function exportToCSV() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'exportToCSV',
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function clearAllData() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'clearAllData',
         },
         response => {
           res(response);
@@ -590,8 +713,13 @@ export class ChartData {
   }
   getWeek(day) {
     let week = [];
-    var d = this.getMonday(day);
-    for (let i = 1; i <= 7; i++) week.push(fn.getDateString(d)), d.setDate(d.getDate() + 1);
+    const startOfWeek = moment(day).startOf(config.getStartOfWeek());
+    const endOfWeek = moment(day).endOf(config.getStartOfWeek());
+    while (!startOfWeek.isSame(endOfWeek, 'date')) {
+      week.push(startOfWeek.clone().format('YYYY-MM-DD'));
+      startOfWeek.add(1, 'd');
+    }
+    week.push(endOfWeek.format('YYYY-MM-DD'));
     return week;
   }
   getMonth(day) {

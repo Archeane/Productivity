@@ -36,5 +36,12 @@ export default class Config {
     this.BLACKLIST_PROTOCOL = ['chrome:', 'chrome-extension:'];
     this.IDLE_TIME_TABLE = [15, this.IDLE_TIME_DEFAULT, 45, 60, 90, 120, 180, 240, 300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3e3, 3300, 3600, 7200];
     this.GRAPH_GAP_TABLE = [0, 0.1, 0.2, 0.3, this.GRAPH_GAP_DEFAULT, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+    this.START_OF_WEEK = 'isoweek';
+  }
+  toggleStartOfWeek() {
+    this.START_OF_WEEK == 'isoweek' ? (this.START_OF_WEEK = 'week') : (this.START_OF_WEEK = 'isoweek');
+  }
+  getStartOfWeek() {
+    return this.START_OF_WEEK;
   }
 }
