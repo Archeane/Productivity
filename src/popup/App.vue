@@ -2,11 +2,11 @@
   <div id="app">
     <v-card style="height: 600px; width: 400px;">
       <v-toolbar dense width="400px;" flat>
-        <v-toolbar-title>Productivity</v-toolbar-title>
+        <v-img src="../icons/PRODUCTIVITY-48.png" height="38" width="30" style="margin-left:-12px;"></v-img><v-toolbar-title>Productivity</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn text x-small @click="redirectOptions('')">Stats</v-btn>
         <v-btn text x-small @click="redirectOptions('settings')">Options</v-btn>
-        <v-btn text x-small>Support</v-btn>
+        <v-btn text x-small @click="redirectOptions('support')">Support</v-btn>
       </v-toolbar>
       <v-divider></v-divider>
       <v-row style="margin-left: auto; margin-right: auto">
@@ -19,7 +19,7 @@
         </v-col>
       </v-row>
       <v-divider></v-divider>
-      <v-tabs background-color="transparent" grow color="basil" v-if="loaded">
+      <v-tabs background-color="#F5F5F5" grow v-if="loaded">
         <v-tab>All Sites</v-tab>
         <v-tab>Timeline</v-tab>
         <v-tab>Watch Sites</v-tab>
@@ -50,9 +50,11 @@
           <timeline-chart v-if="timelineData" :data="timelineData" width="500" height="450" style="margin-left: -2rem;" />
         </v-tab-item>
         <v-tab-item>
-          <span class="overline">Today's total time:</span>
-          <span class="display-2 font-weight-black" style="text-align: right;">{{ minutesToHours(watchSitesTotalTime) }}</span>
-          <stacked-bar-chart v-if="loaded" :chartdata="stackedBarData" />
+          <div style="margin-top: 10px;">
+            <span style="font-size: 12px; font-weight: 100; margin-left: 10px;">TODAY'S TOTAL TIME:</span>
+            <span style="font-size: 26px; font-weight: 600; margin-left: 90px;">{{ minutesToHours(watchSitesTotalTime) }}</span>
+          </div>
+          <stacked-bar-chart v-if="loaded" :chartdata="stackedBarData" style="padding-top: 5px;" />
         </v-tab-item>
       </v-tabs>
     </v-card>

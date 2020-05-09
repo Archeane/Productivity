@@ -1,10 +1,34 @@
 <template>
   <v-container fluid fillheight>
+    <v-row dense>
+      <h2 class="font-weight-light mr-auto ml-3">Dashboard</h2>
+      <span class="subtitle-2 ml-auto mr-3">
+        Have you find this tool useful? Please make a donation! <br />
+        Any amount is appreciated 😁</span
+      >
+      <div>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+          <input type="hidden" name="cmd" value="_donations" />
+          <input type="hidden" name="business" value="EF6BJM8AY86QA" />
+          <input type="hidden" name="currency_code" value="USD" />
+          <input
+            type="image"
+            src="https://www.empowerhaititogether.org/wp-content/uploads/2016/10/Donate-Button-heart-300x97.png"
+            border="0"
+            height="40"
+            name="submit"
+            title="PayPal - The safer, easier way to pay online!"
+            alt="Donate with PayPal button"
+          />
+          <img alt border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+        </form>
+      </div>
+    </v-row>
     <v-row>
       <v-col cols="7">
         <v-row>
           <v-col cols="5">
-            <v-card height="34vh">
+            <v-card height="33vh">
               <v-row dense style="max-height: 6vh;">
                 <v-col cols="11">
                   <v-row align="start" justify="center" style="margin-top: -1.5vh;">
@@ -32,11 +56,11 @@
             </v-card>
           </v-col>
           <v-col cols="7">
-            <v-card height="34vh">
+            <v-card height="33vh">
               <v-row dense style="max-height: 17.5%;">
                 <v-col cols="11">
                   <v-row align="start" justify="center" style="margin-top: -2.5%;">
-                    <v-card-title style="margin-left: 2.5%;">Total Time Online</v-card-title>
+                    <v-card-title style="margin-left: 2.5%;">Primary sites</v-card-title>
                     <v-row justify="end">
                       <v-card-title>Last</v-card-title>
                       <div style="width: 90px">
@@ -77,7 +101,7 @@
               <v-row dense style="max-height: 6vh;">
                 <v-col cols="11">
                   <v-row align="start" justify="center" style="margin-top: -1.5vh;">
-                    <v-card-title style="margin-left: 2vh;">Total Time Online</v-card-title>
+                    <v-card-title style="margin-left: 2vh;">Primary sites by Day</v-card-title>
                     <v-row justify="end">
                       <v-card-title>Last</v-card-title>
                       <div style="width: 90px">
@@ -96,7 +120,7 @@
         </v-row>
         <v-row>
           <v-col cols="12">
-            <v-card height="40vh">
+            <v-card>
               <v-row dense style="height: 6vh;">
                 <v-col cols="8" style="margin-top: -0.5rem;">
                   <v-row align="start" justify="start">
@@ -116,12 +140,13 @@
 
               <v-data-table
                 v-if="loaded"
-                :items-per-page="5"
+                :items-per-page="8"
                 :headers="tableHeaders"
                 :items="weekChartData.usageFrequencyTable"
                 :search="search"
                 :key="weekChartData.usageFrequencyTable"
                 multi-sort
+                dense
                 class="elevation-1"
               ></v-data-table>
             </v-card>

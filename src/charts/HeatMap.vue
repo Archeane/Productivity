@@ -29,7 +29,13 @@ export default {
             },
           },
         },
-        tooltip: {},
+        tooltip: {
+          y: {
+            formatter: function(value) {
+              return value + ' mins';
+            },
+          },
+        },
       },
       series: this.chartSeries,
     };

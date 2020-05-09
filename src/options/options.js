@@ -9,6 +9,7 @@ import WatchSitesOverview from './components/WatchSitesOverview';
 import WatchSitesDetails from './components/WatchSitesDetails';
 import UsagePattern from './components/UsagePattern';
 import Settings from './components/Settings';
+import About from './components/About';
 /* eslint-disable no-new */
 
 Vue.use(VueRouter);
@@ -32,6 +33,10 @@ const routes = [
   {
     path: '/settings',
     component: Settings,
+  },
+  {
+    path: '/support',
+    component: About,
   },
 ];
 const router = new VueRouter({

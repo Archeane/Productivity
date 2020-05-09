@@ -1,10 +1,38 @@
 <template>
   <v-container fluid fill-height>
-    <h2 class="font-weight-light">Watch Sites Overview</h2>
+    <v-row dense>
+      <h2 class="font-weight-light ml-3">Watch Sites Overview</h2>
+      <v-btn-toggle color="primary" v-model="isMonth" dense rounded mandatory class="mr-auto ml-3">
+        <v-btn :value="false" text>week</v-btn>
+        <v-btn :value="true" text>month</v-btn>
+      </v-btn-toggle>
+      <span class="subtitle-2 ml-auto mr-3">
+        Have you find this tool useful? Please make a donation! <br />
+        Any amount is appreciated 😁</span
+      >
+      <div>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+          <input type="hidden" name="cmd" value="_donations" />
+          <input type="hidden" name="business" value="EF6BJM8AY86QA" />
+          <input type="hidden" name="currency_code" value="USD" />
+          <input
+            type="image"
+            src="https://www.empowerhaititogether.org/wp-content/uploads/2016/10/Donate-Button-heart-300x97.png"
+            border="0"
+            height="40"
+            name="submit"
+            title="PayPal - The safer, easier way to pay online!"
+            alt="Donate with PayPal button"
+          />
+          <img alt border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+        </form>
+      </div>
+    </v-row>
+    <!-- <h2 class="font-weight-light">Watch Sites Overview</h2>
     <v-btn-toggle color="primary" v-model="isMonth" dense rounded mandatory style="margin-left:auto;">
       <v-btn :value="false" text>week</v-btn>
       <v-btn :value="true" text>month</v-btn>
-    </v-btn-toggle>
+    </v-btn-toggle> -->
     <v-col cols="12" style="max-height: 33vh;">
       <v-row>
         <v-col cols="3">

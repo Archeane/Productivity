@@ -1,27 +1,35 @@
 <template>
   <v-container fluid fill-height>
-    <h2 class="font-weight-light">Watch Sites Details</h2>
-    <div id="donate">
-      <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-        <input type="hidden" name="cmd" value="_donations" />
-        <input type="hidden" name="business" value="EF6BJM8AY86QA" />
-        <input type="hidden" name="currency_code" value="USD" />
-        <input
-          type="image"
-          src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif"
-          border="0"
-          name="submit"
-          title="PayPal - The safer, easier way to pay online!"
-          alt="Donate with PayPal button"
-        />
-        <img alt border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
-      </form>
-    </div>
+    <v-row dense>
+      <h2 class="font-weight-light mr-auto ml-3">Watch Sites Details</h2>
+      <span class="subtitle-2 ml-auto mr-3">
+        Have you find this tool useful? Please make a donation! <br />
+        Any amount is appreciated 😁</span
+      >
+      <div>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+          <input type="hidden" name="cmd" value="_donations" />
+          <input type="hidden" name="business" value="EF6BJM8AY86QA" />
+          <input type="hidden" name="currency_code" value="USD" />
+          <input
+            type="image"
+            src="https://www.empowerhaititogether.org/wp-content/uploads/2016/10/Donate-Button-heart-300x97.png"
+            border="0"
+            height="40"
+            name="submit"
+            title="PayPal - The safer, easier way to pay online!"
+            alt="Donate with PayPal button"
+          />
+          <img alt border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+        </form>
+      </div>
+    </v-row>
+    <v-divider></v-divider>
     <v-row>
-      <v-col cols="6">
+      <v-col cols="6" style="margin-top: -0.75rem;">
         <v-row>
           <v-col cols="12">
-            <v-card v-if="loaded" max-height="55vh">
+            <v-card v-if="loaded" height="55vh">
               <v-row dense style="height: 5vh;">
                 <v-col cols="6">
                   <v-row align="start" justify="start">
@@ -52,8 +60,8 @@
                   </v-row>
                 </v-col>
               </v-row>
-              <div v-if="sitesIntervals.data.length > 0" style="max-height: 50vh;">
-                <timeline-site-chart :chartSeries="sitesIntervals" :key="sitesIntervals" style="height: 50vh;" />
+              <div v-if="sitesIntervals.data.length > 0">
+                <timeline-site-chart :chartSeries="sitesIntervals" :key="sitesIntervals" />
               </div>
               <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes today 🏆</v-card-subtitle>
             </v-card>

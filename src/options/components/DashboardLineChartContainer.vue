@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mx-auto" style="max-height: 56vh">
+  <v-card class="mx-auto" style="max-height: 50vh">
     <v-tabs background-color="white" color="deep-purple accent-4" class="elevation-2">
       <v-tab>Total time</v-tab>
       <v-tab>Specific sites</v-tab>
@@ -15,7 +15,7 @@
             :items="['1', '2', '3', '4']"
             @change="$emit('update:weekTotalLinesSelect', weekTotalLinesSelect)"
           ></v-select> -->
-          <line-chart :chartdata="weekTotal" :options="weekTotalOptions" :key="weekTotal" style="max-height: 45.5vh;" />
+          <line-chart :chartdata="weekTotal" :options="weekTotalOptions" :key="weekTotal" style="max-height: 40vh;" />
         </v-container>
       </v-tab-item>
       <v-tab-item>
@@ -28,7 +28,7 @@
             label="Websites"
             @change="$emit('update:weekSitesSelection', weekSitesSelection)"
           ></v-autocomplete>
-          <line-chart :chartdata="weekSites" :key="weekSites" style="max-height: 80%" />
+          <line-chart :chartdata="weekSites" :key="weekSites" style="max-height: 35vh;" />
         </v-container>
       </v-tab-item>
     </v-tabs>

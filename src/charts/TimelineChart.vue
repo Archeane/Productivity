@@ -9,8 +9,8 @@ import moment from 'moment';
 export default {
   props: {
     data: { type: Array, default: [] },
-    width: { type: Number, default: 600 },
-    height: { type: Number, default: 640 },
+    width: { default: 600 },
+    height: { default: 640 },
   },
   data: function() {
     return {

@@ -20,7 +20,14 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         tooltips: {
-          enabled: true,
+          callbacks: {
+            label: function(tooltipItem, data) {
+              var label = data.labels[tooltipItem.index].replace(/([.]\w+)$/, '').replace(/^www\./, '');
+              var h = (mins / 60) | 0,
+                m = mins % 60 | 0;
+              return `${label} : ${h} hrs ${m} mins`;
+            },
+          },
         },
         plugins: {
           datalabels: {
