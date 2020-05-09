@@ -30,6 +30,15 @@ export default class Fn{
     dcl(e) {
         return this.dclCounter++, config.DEVELOPMENT_MODE && console.log(e), !0
     }
+    validUrl(str){
+        var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+            '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+        return !!pattern.test(str);
+    }
     parseDomainFromUrl(e) {
         var t, n;
         return n = document.createElement("a"), n.href = e, t = n.hostname

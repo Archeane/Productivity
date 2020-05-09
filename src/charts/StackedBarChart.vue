@@ -28,6 +28,9 @@ export default {
           ],
           yAxes: [
             {
+              ticks: {
+                beginAtZero: true,
+              },
               stacked: true,
             },
           ],
