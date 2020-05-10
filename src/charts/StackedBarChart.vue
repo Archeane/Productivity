@@ -1,21 +1,33 @@
 <script>
 import { Bar } from 'vue-chartjs';
 import Chart from 'chart.js';
-
+//import ChartDataLabels from 'chartjs-plugin-datalabels';
+import moment from 'moment';
 export default {
   extends: Bar,
   props: {
     chartdata: { type: Object, default: null },
-    options: {
-      default: {
+  },
+  data: () => {
+    return {
+      options: {
+        plugins: {
+          datalabels: {
+            display: false,
+          },
+        },
         legend: {
-          display: true,
+          display: false,
         },
         tooltips: {
           mode: 'label',
           callbacks: {
             label: function(t, d) {
-              return t.yLabel;
+              if (t.yLabel != 0) {
+                var h = Math.floor(t.yLabel / 60),
+                  m = t.yLabel % 60;
+                return `${d.datasets[t.datasetIndex].label}: ${h} hrs ${m} mins`;
+              }
             },
           },
         },
@@ -24,19 +36,32 @@ export default {
           xAxes: [
             {
               stacked: true,
+              gridLines: {
+                display: false,
+              },
+              ticks: {
+                callback: function(label, index, labels) {
+                  return moment(label).format('MM/DD');
+                },
+              },
             },
           ],
           yAxes: [
             {
+              stacked: true,
               ticks: {
                 beginAtZero: true,
+                min: 0,
+                stepSize: 120,
+                callback: function(label, index, labels) {
+                  return label / 60 + ' hrs ';
+                },
               },
-              stacked: true,
             },
           ],
         },
       },
-    },
+    };
   },
   mounted() {
     this.renderChart(this.chartdata, this.options);
