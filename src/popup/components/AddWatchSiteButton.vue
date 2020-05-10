@@ -30,6 +30,8 @@ export default {
             if (response.status == 200) {
               self.watchSiteUrl = response.url;
               self.showSuccessMsg = true;
+              console.log(self.showSuccessMsg);
+              console.log(self.watchSiteUrl);
             }
           })
           .catch(err => console.log(err));

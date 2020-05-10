@@ -79,6 +79,7 @@
             <v-card-title class="pb-2 pt-2">Watch Sites Total Time</v-card-title>
             <v-divider></v-divider>
             <div class="chart-container" style="position: relative; width: 90%;">
+              <p class="caption pl-2">If your area is getting smaller, it means you're reducing time on watch sites!</p>
               <radar-chart v-if="loaded" :chartdata="weekRadar" :key="weekRadar" style="max-height: 45vh;" />
             </div>
           </v-card>
@@ -177,7 +178,7 @@ export default {
         })
       );
 
-      this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3, null, this.isMonth);
+      this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(2, null, this.isMonth);
 
       this.weekSitesLine = this.chartDataProcessor.weekWatchSitesLineChart(null, this.isMonth);
 

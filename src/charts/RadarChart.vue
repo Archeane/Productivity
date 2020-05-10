@@ -23,6 +23,7 @@ export default {
           callbacks: {
             label: function(tooltipItem, data) {
               var label = data.labels[tooltipItem.index].replace(/([.]\w+)$/, '').replace(/^www\./, '');
+              var mins = parseInt(tooltipItem.yLabel);
               var h = (mins / 60) | 0,
                 m = mins % 60 | 0;
               return `${label} : ${h} hrs ${m} mins`;

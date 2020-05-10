@@ -89,18 +89,21 @@ export default {
   watch: {
     date1: function(val) {
       this.changeTimeline(0, this.chartDataProcessor.dayTimeline(moment(val).toDate()));
+      this.date2 = null;
     },
     date2: function(val) {
       this.changeTimeline(1, this.chartDataProcessor.dayTimeline(moment(val).toDate()));
       var chartContainer = document.getElementById('timeline');
-      var oldChildIdx,
-        svgCounter = 1;
-      for (var i = 0; i < chartContainer.childNodes.length; i++) {
-        if (chartContainer.childNodes[i].nodeName == 'svg') svgCounter += 1;
-        if (svgCounter == 2) oldChildIdx = i;
-      }
-      if (oldChildIdx) chartContainer.removeChild(chartContainer.childNodes[oldChildIdx]);
-      else chartContainer.removeChild(chartContainer.childNodes[2]);
+      chartContainer.removeChild(chartContainer.childNodes[2]);
+      console.log(chartContainer.childNodes);
+      // var oldChildIdx,
+      // svgCounter = 1;
+      // for (var i = 0; i < chartContainer.childNodes.length; i++) {
+      //   if (chartContainer.childNodes[i].nodeName == 'svg') svgCounter += 1;
+      //   if (svgCounter == 2) oldChildIdx = i;
+      // }
+      // if (oldChildIdx) chartContainer.removeChild(chartContainer.childNodes[oldChildIdx]);
+      // else chartContainer.removeChild(chartContainer.childNodes[2]);
     },
     // date3: function(val) {
     //   this.changeTimeline(2, this.chartDataProcessor.dayTimeline(moment(val).toDate()));

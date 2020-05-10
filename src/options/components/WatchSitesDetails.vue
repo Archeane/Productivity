@@ -98,6 +98,10 @@
             </v-menu>
             <v-tab-item>
               <v-container fluid>
+                <span>
+                  Each dot represents a visit (of more than 30 seconds, and less than 5 minutes before the previous visit) to the site <br />
+                  This can help you discover your visiting pattern, whether it's the time period or frequency you visit this site.</span
+                >
                 <scatter-chart :chartdata="sitesVisitsScatter" :key="sitesVisitsScatter" />
               </v-container>
             </v-tab-item>
