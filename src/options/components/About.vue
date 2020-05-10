@@ -53,7 +53,7 @@
           <v-card-title>Feedback</v-card-title>
           <v-card-text>
             Found a bug? Have a feature request?
-            <a href="https://forms.gle/Wn3zLQwJwPWKyqqv8">Let me know</a>! You can also contribute to this project here
+            <a href="https://forms.gle/Wn3zLQwJwPWKyqqv8">Let me know</a>! You can also contribute to this project <a href="https://github.com/Archeane/Productivity">here</a>
           </v-card-text>
         </v-card>
       </v-col>
