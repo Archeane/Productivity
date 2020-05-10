@@ -1,5 +1,5 @@
 <template>
-  <apexcharts type="donut" :options="chartOptions" :series="series"></apexcharts>
+  <apexcharts type="donut" :options="chartOptions" :series="series" height="250"></apexcharts>
 </template>
 <script>
 import VueApexCharts from 'vue-apexcharts';
@@ -9,8 +9,8 @@ export default {
     apexcharts: VueApexCharts,
   },
   props: {
-    chartSeries: { type: Array },
-    chartLabels: { type: Array },
+    chartSeries: Array,
+    chartLabels: Array,
   },
   data: function() {
     return {
@@ -34,9 +34,21 @@ export default {
         },
         dataLabels: {
           formatter(val, opts) {
-            const name = opts.w.globals.labels[opts.seriesIndex];
-            const minutes = opts.w.globals.series[opts.seriesIndex].toString() + ' mins';
-            return [name, minutes];
+            //console.log(val, opts);
+            const name = opts.w.globals.labels[opts.seriesIndex].replace(/([.]\w+)$/, '').replace(/^www\./, '');
+            // const minutes = opts.w.globals.series[opts.seriesIndex].toString() + ' mins';
+            return name;
+          },
+        },
+        tooltip: {
+          y: {
+            formatter: (val, opts) => {
+              const total = opts.globals.series.reduce((a, b) => {
+                return a + b;
+              });
+              const percentage = Math.floor((val / total) * 100);
+              return `${val} mins, ${percentage} %`;
+            },
           },
         },
         theme: {
@@ -48,11 +60,6 @@ export default {
             show: true,
           },
         },
-        responsive: [
-          {
-            breakpoint: 480,
-          },
-        ],
       },
       series: this.chartSeries,
     };

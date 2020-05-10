@@ -1,10 +1,13 @@
 <script>
-import { Bar } from 'vue-chartjs';
+import { HorizontalBar } from 'vue-chartjs';
+import ChartJsPluginDataLabels from 'chartjs-plugin-datalabels';
 import Chart from 'chart.js';
-//import ChartDataLabels from 'chartjs-plugin-datalabels';
 import moment from 'moment';
 export default {
-  extends: Bar,
+  extends: HorizontalBar,
+  components: {
+    ChartJsPluginDataLabels,
+  },
   props: {
     chartdata: { type: Object, default: null },
   },
@@ -20,33 +23,34 @@ export default {
           display: false,
         },
         tooltips: {
-          mode: 'label',
+          mode: 'nearest',
           callbacks: {
             label: function(t, d) {
-              if (t.yLabel != 0) {
-                var h = Math.floor(t.yLabel / 60),
-                  m = t.yLabel % 60;
-                return `${d.datasets[t.datasetIndex].label}: ${h} hrs ${m} mins`;
-              }
+              var h = Math.floor(parseInt(t.value) / 60),
+                m = Math.floor(parseInt(t.value) % 60);
+              if (h > 0) return `${d.datasets[t.datasetIndex].label}: ${h} hrs ${m} mins`;
+              else return `${d.datasets[t.datasetIndex].label}: ${m} mins`;
             },
           },
         },
         responsive: true,
+        maintainAspectRatio: false,
         scales: {
-          xAxes: [
+          yAxes: [
             {
               stacked: true,
               gridLines: {
                 display: false,
               },
               ticks: {
+                reverse: true,
                 callback: function(label, index, labels) {
                   return moment(label).format('MM/DD');
                 },
               },
             },
           ],
-          yAxes: [
+          xAxes: [
             {
               stacked: true,
               ticks: {

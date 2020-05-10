@@ -11,24 +11,28 @@ export default {
     apexcharts: VueApexCharts,
   },
   props: {
-    chartSeries: { type: Object, default: [] },
+    chartSeries: { type: Object, default: {} },
   },
   data: function() {
-    console.log(this.chartSeries);
     return {
       chartOptions: {
         chart: {
-          height: 450,
           type: 'rangeBar',
+          defaultLocale: 'en',
+          height: '80%',
         },
         plotOptions: {
           bar: {
             horizontal: true,
-            barHeight: '80%',
+            barHeight: '60%',
+            columnWidth: '60%',
           },
         },
         xaxis: {
           type: 'datetime',
+          labels: {
+            datetimeUTC: false,
+          },
         },
         stroke: {
           width: 1,

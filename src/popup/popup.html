@@ -4,41 +4,67 @@
     <meta charset="UTF-8" />
     <title>Title</title>
     <link rel="stylesheet" href="popup.css" />
+    <link href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" rel="stylesheet" />
     <% if (NODE_ENV === 'development') { %>
     <!-- Load some resources only in development environment -->
     <% } %>
   </head>
+
   <body>
-    <div id="wrapper" data-visibility="today">
-      <div class="doughnut-wrapper">
-        <div id="doughnut-today" class="doughnut-container sign-today-display"></div>
-        <div id="doughnut-average" class="doughnut-container sign-average-display"></div>
-        <div id="doughnut-alltime" class="doughnut-container sign-alltime-display"></div>
-      </div>
-      <nav class="chart-types">
-        <ul>
-          <li class="active"><a href="#" tabindex="-1" class="sign-today-link" data-visibility="today">Today</a></li>
-          <li><a href="#" tabindex="-1" class="sign-average-link" data-visibility="average">Daily average</a></li>
-          <li><a href="#" tabindex="-1" class="sign-alltime-link" data-visibility="alltime">All-time</a></li>
-        </ul>
-      </nav>
-      <br />
-      <div class="table-container sign-today-display">
-        <div id="app">
-          <div id="visualization"></div>
-          <table class="datatable" id="table-today" data-range="today">
-            <h1 id="total-time"></h1>
-            <!-- <canvas id="dayPieChart" width="400" height="400"></canvas> -->
-          </table>
-        </div>
-      </div>
-      <div class="table-container sign-average-display">
-        <table class="datatable" id="table-average" data-range="average"></table>
-      </div>
-      <div class="table-container sign-alltime-display">
-        <table class="datatable" id="table-alltime" data-range="alltime"></table>
-      </div>
+    <div id="app">
+      <App />
+      <!-- <pie-chart v-if="loaded" :chartSeries="pieSeries" :chartLabels="pieLabels" /> -->
+      <!--     
+    <v-app id="inspire">
+      <v-card style="height: 600px; width: 400px;">
+        <v-toolbar dense width="400px;" flat>
+          <v-toolbar-title>Productivity</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn text x-small>Stats</v-btn>
+          <v-btn text x-small @click="redirectOptions('usagepattern')">Options</v-btn>
+          <v-btn text x-small>Support</v-btn>
+        </v-toolbar>
+        <v-divider></v-divider>
+        <v-row>
+          <v-col cols="6">
+            <span class="overline">You are currently on</span>
+            <span class="title" v-if="loaded">{{currentTab}}</span>
+          </v-col>
+          <v-col cols="6">
+            <add-watch-site-button />
+          </v-col>
+        </v-row>
+        <v-divider></v-divider>
+        <v-tabs background-color="transparent" grow color="basil" v-if="loaded">
+          <v-tab>All Sites</v-tab>
+          <v-tab>Timeline</v-tab>
+          <v-tab>Watch Sites</v-tab>
+          <v-tab-item>
+            <pie-chart :chartSeries="pieSeries" :chartLabels="pieLabels" />
+            <li v-for="item in tableData" :key="item.name">{{item.name}}</li>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th class="text-left">Url</th>
+                  <th class="text-left">Total Time</th>
+                  <th class="text-left">Visit Frequency</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in tableData" :key="item.name">
+                  <td>{{item.name}}</td>
+                  <td>{{item.total}}</td>
+                  <td>{{item.frequency}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </v-tab-item>
+        </v-tabs>
+      </v-card>
+
+    </v-app> -->
     </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

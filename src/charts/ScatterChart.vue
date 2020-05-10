@@ -39,33 +39,56 @@ export default {
 */
 import Chart from 'chart.js';
 import moment from 'moment';
-import { Scatter } from 'vue-chartjs';
+import { Scatter, mixins } from 'vue-chartjs';
+const { reactiveProp } = mixins;
 export default {
   extends: Scatter,
+  mixins: [reactiveProp],
   props: {
     chartdata: { type: Object, default: null },
   },
   data: function() {
     return {
       options: {
+        chart: {
+          height: '100%',
+        },
+        plugins: {
+          datalabels: { display: false },
+        },
         scales: {
           xAxes: [
             {
-              ticks: {
-                type: 'linear',
-                callback: function(val, index, values) {
-                  return moment(val).format('MM/DD');
+              gridLines: {
+                display: false,
+              },
+              // ticks: {
+              // callback: function(val, index, values) {
+              //   console.log(val, index, values)
+              //   return moment(val).format('MM/DD');
+              // },
+              type: 'time',
+              time: {
+                unit: 'day',
+                stepSize: 1,
+                displayFormats: {
+                  millisecond: 'MMM DD',
+                  second: 'MMM DD',
+                  hour: 'MMM DD',
+                  day: 'MMM DD',
                 },
               },
+              // },
             },
           ],
           yAxes: [
             {
-              type: 'time',
-              unit: 'hour',
-              distribution: 'linear',
-              time: {
-                stepSize: 1,
+              ticks: {
+                reverse: true,
+                stepSize: 60,
+                callback: function(label, index, labels) {
+                  return moment(parseInt(Math.round(label / 60)), ['HH']).format('h A');
+                },
               },
             },
           ],
@@ -74,7 +97,6 @@ export default {
     };
   },
   mounted() {
-    console.log(this.chartdata);
     this.renderChart(this.chartdata, this.options);
   },
 };

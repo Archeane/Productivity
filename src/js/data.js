@@ -6,36 +6,7 @@ import moment from 'moment';
 import { colors } from 'vuetify/lib';
 
 var fn = new Fn();
-/**
- * Line charts:
- *        1) Week total usage
- *        2) week watch sites usage - date => site usage on date
- *        3) specifc site usage
- *
- * Donghout:
- *   Day:
- *      1) Day site => day_usage
- *   Week:
- *      2) Week site => total_usage_this_week
- *      3) Half donut site => total_usage_this_week
- *
- *  Bar:
- *          1) x: date, y: site time on date    - bar stacked
- *  Radar:  1) x: watch site, y: total time this week   - column overlap
- *
- * TimeLine:
- *      Day:
- *          1) x: time, y: which site   -group by label: today's usage pattern
- *          2) x: time, y: site - no group by label: site usage patterns
- *          3) x: hour y: watch site - no group by label
- *
- * Scatter:
- *      1) x - day, y - site. point = single entry
- *
- * Table:
- *      1) week usage & freuqncy
- */
-
+var config = new Config();
 async function getTimeTable() {
   return new Promise((res, rej) => {
     try {
@@ -53,7 +24,7 @@ async function getTimeTable() {
   });
 }
 
-async function getWatchSites() {
+export async function getWatchSites() {
   return new Promise((res, rej) => {
     try {
       chrome.runtime.sendMessage(
@@ -88,6 +59,128 @@ export async function addWatchSite(url) {
   });
 }
 
+export async function removeWatchSite(url) {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'removeWatchSite',
+          url: url,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function getStartOfWeek() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'getStartOfWeek',
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function setStartOfWeek(day) {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'setStartOfWeek',
+          day: day,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function getIdleTime() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'getIdleTime',
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function setIdleTime(time) {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'setIdleTime',
+          time: time,
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function exportToCSV() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'exportToCSV',
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
+export async function clearAllData() {
+  return new Promise((res, rej) => {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          request: 'clearAllData',
+        },
+        response => {
+          res(response);
+        }
+      );
+    } catch (err) {
+      rej(err);
+    }
+  });
+}
+
 class TimeTableData {
   async init() {
     this.timeTable = await getTimeTable();
@@ -102,23 +195,8 @@ class TimeTableData {
     return day in this.timeTable ? this.timeTable[day] : {};
   }
 
-  /**
-   *
-   * @param {*} day
-   * @param {*} timeTable
-   * @returns sorted url => total_time_today
-   */
-  getDayUsageSorted(day) {
-    if (!(day in this.timeTable)) {
-      return {};
-    }
-    const dayUsage = {};
-    Object.entries(this.timeTable[day])
-      .sort((a, b) => b[1]['total'] - a[1]['total'])
-      .forEach((url, usage) => {
-        dayUsage[url] = Math.floor(usage['total'] / 60);
-      });
-    return dayUsage;
+  getDaySiteUsage(day, url) {
+    return day in this.timeTable && url in this.timeTable[day] ? this.timeTable[day][url] : {};
   }
 
   /**
@@ -203,7 +281,7 @@ class TimeTableData {
       const day = week[i];
       if (day in this.timeTable) {
         for (let [_, usage] of Object.entries(this.timeTable[day])) {
-          weekTotal[i] += Math.floor(usage['total'] / 60);
+          if ('total' in usage) weekTotal[i] += Math.floor(usage['total'] / 60);
         }
       }
     }
@@ -282,6 +360,12 @@ class TimeTableData {
     return month;
   }
 
+  /**
+   *
+   * @param {String} day
+   * @param {String} url
+   * @returns timetable[day][url]['visits]
+   */
   getSiteDayVisits(day, url) {
     if (!(day in this.timeTable) || !(url in this.timeTable[day])) return [];
     return this.timeTable[day][url]['visits'];
@@ -302,7 +386,7 @@ class TimeTableData {
             interval[1] - interval[0] > 100 * 1000 &&
             visits.push({
               timeRange: [new Date(interval[0]), new Date(interval[1])],
-              val: url,
+              val: url.replace(/([.]\w+)$/, '').replace(/^www\./, ''),
             });
         });
       }
@@ -405,6 +489,21 @@ class WatchSitesData {
     return this.watchSites;
   }
 
+  timeFrameTotalTime(timeFrame) {
+    var timeFrameUsage = Array(timeFrame.length).fill(0);
+    for (var i = 0; i < timeFrame.length; i++) {
+      var day = timeFrame[i];
+      if (day in this.timeTable) {
+        this.watchSites.forEach(url => {
+          if (url in this.timeTable[day]) {
+            timeFrameUsage[i] += Math.floor(this.timeTable[day][url]['total'] / 60);
+          }
+        });
+      }
+    }
+    return timeFrameUsage;
+  }
+
   /**
    *
    * @param {String} day
@@ -449,7 +548,6 @@ class WatchSitesData {
         });
       }
     });
-    console.log(data);
     return data;
   }
 
@@ -475,21 +573,6 @@ class WatchSitesData {
   /**
    *
    * @param {Array} week
-   * @returns {Number} total minutes on watched sites this week
-   */
-  weekWatchSitesTotalUsage(week) {
-    var weekUsage = 0;
-    this.watchSites.forEach(url => {
-      week.forEach(day => {
-        if (day in this.timeTable && url in this.timeTable[day]) weekUsage += Math.floor(this.timeTable[day][url]['total'] / 60);
-      });
-    });
-    return weekUsage;
-  }
-
-  /**
-   *
-   * @param {Array} week
    * @returns sorted url => total time
    */
   weekTopWatchSites(week) {
@@ -506,6 +589,48 @@ class WatchSitesData {
     return Object.entries(weekUsage).sort(function(a, b) {
       return weekUsage[b] - weekUsage[a];
     });
+  }
+
+  /**
+   *
+   * @param {Array} time frame
+   * @return {Map} (url => {total: , frequency:, timeBtwVisits:,})
+   */
+  getTimeFrameTotalFrequencyUsage(week) {
+    var urlUsage = {};
+
+    this.watchSites.forEach(url => {
+      var days = 0;
+      week.forEach(day => {
+        if (!(day in this.timeTable)) return;
+        if (!(url in this.timeTable[day])) return;
+        if (!(url in urlUsage))
+          urlUsage[url] = {
+            total: 0,
+            frequency: 0,
+            timeBtwVisit: 0,
+          };
+        const usage = this.timeTable[day][url];
+        urlUsage[url]['total'] += Math.floor(usage['total'] / 60);
+        var totalIntervalTime = 0,
+          freq = 0;
+        for (var i = 1; i < usage['visits'].length; i++) {
+          if (typeof usage['visits'][i] !== 'number' && typeof usage['visits'][i - 1] !== 'number') {
+            var s = usage['visits'][i - 1][1],
+              e = usage['visits'][i][0];
+            if (e - s > 60 * 1000) (totalIntervalTime += e - s), (freq += 1);
+          }
+        }
+        if (freq > 0 && totalIntervalTime != null) {
+          urlUsage[url]['timeBtwVisit'] += totalIntervalTime / (1000 * freq);
+          urlUsage[url]['frequency'] += freq;
+        }
+        // console.log(`${day}, ${url}, seconds btw visit: ${urlUsage[url]['timeBtwVisit']}, visits.length: ${usage['visits'].length}, totalIntervaltime: ${totalIntervalTime}, freq: ${freq}`)
+        days += 1;
+      });
+      if (url in urlUsage) urlUsage[url]['timeBtwVisit'] /= days;
+    });
+    return urlUsage;
   }
 }
 
@@ -566,16 +691,18 @@ export class ChartData {
       '#71c73c',
       '#189ad3',
     ];
-    var colors = [];
+    if (num_of_colors == null) return color_palette;
     if (num_of_colors > color_palette.length) {
+      // todo: resolve
       return color_palette;
     }
-    for (var i = 0; i < num_of_colors; i++) {
-      let rand = [Math.floor(Math.random() * color_palette.length)];
-      colors.push(color_palette[rand]);
-      color_palette.splice(rand, 1);
-    }
-    return colors;
+    // var colors = [];
+    // for (var i = 0; i < num_of_colors; i++) {
+    //   let rand = [Math.floor(Math.random() * color_palette.length)];
+    //   colors.push(color_palette[rand]);
+    //   color_palette.splice(rand, 1);
+    // }
+    return color_palette.slice(0, num_of_colors);
   } // return same number of colors as number of items in data passed in
 
   getMonday(d) {
@@ -586,9 +713,29 @@ export class ChartData {
   }
   getWeek(day) {
     let week = [];
-    var d = this.getMonday(day);
-    for (let i = 1; i <= 7; i++) week.push(fn.getDateString(d)), d.setDate(d.getDate() + 1);
+    const startOfWeek = moment(day).startOf(config.getStartOfWeek());
+    const endOfWeek = moment(day).endOf(config.getStartOfWeek());
+    while (!startOfWeek.isSame(endOfWeek, 'date')) {
+      week.push(startOfWeek.clone().format('YYYY-MM-DD'));
+      startOfWeek.add(1, 'd');
+    }
+    week.push(endOfWeek.format('YYYY-MM-DD'));
     return week;
+  }
+  getMonth(day) {
+    let month = [];
+    const startOfMonth = moment(day).startOf('month');
+    const endOfMonth = moment(day).endOf('month');
+    while (!startOfMonth.isSame(endOfMonth, 'date')) {
+      month.push(startOfMonth.clone().format('YYYY-MM-DD'));
+      startOfMonth.add(1, 'd');
+    }
+    month.push(endOfMonth.format('YYYY-MM-DD'));
+    return month;
+  }
+
+  getWatchSites() {
+    return this.WatchSites.getWatchSites();
   }
 
   /**
@@ -609,12 +756,21 @@ export class ChartData {
       if (end > 0) lastDate = moment().add(end, 'd');
       if (start == 0) (currDate = moment()), lastDate.subtract(1, 'd');
       if (end == 0) (lastDate = moment()), currDate.add(1, 'd');
-      while (!currDate.isSame(lastDate, 'date')) {
-        dates.push(currDate.clone().format('YYYY-MM-DD'));
-        currDate.add(1, 'd');
-      }
-      dates.push(lastDate.format('YYYY-MM-DD'));
+    } else if (
+      start instanceof Date &&
+      end instanceof Date &&
+      Object.prototype.toString.call(start) === '[object Date]' &&
+      Object.prototype.toString.call(end) === '[object Date]'
+    ) {
+      (currDate = moment(start)), (lastDate = moment(end));
+    } else {
+      return [];
     }
+    while (!currDate.isSame(lastDate, 'date')) {
+      dates.push(currDate.clone().format('YYYY-MM-DD'));
+      currDate.add(1, 'd');
+    }
+    dates.push(lastDate.format('YYYY-MM-DD'));
     return dates;
   }
 
@@ -632,55 +788,22 @@ export class ChartData {
 
   timeFrameWatchSitesTotalUsage(start, end) {
     const timeFrame = this.getTimeFrame(start, end);
-    return this.WatchSites.weekWatchSitesTotalUsage(timeFrame);
+    return this.WatchSites.timeFrameTotalTime(timeFrame);
   }
 
   // =============================Line charts =========================================
-  /**
-   *
-   * @param {boolean} lastWeek - true: get two week's data
-   */
-  weekTotalTimeLineChart(lastWeek, date) {
-    var datasets = [];
-    if (date == null) {
-      date = new Date();
-    }
-    const week = this.getWeek(date);
-    const weekTotal = this.TimeTable.getWeekTotalTime(week);
-    datasets.push({
-      label: 'Total Usage This Week',
-      borderColor: '#ff7f7f',
-      data: weekTotal,
-      backgroundColor: '#444444',
-      fill: lastWeek,
-    });
-    if (lastWeek) {
-      var date = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7);
-      const lastWeek = this.getWeek(date);
-      const lastWeekTotal = this.TimeTable.getWeekTotalTime(lastWeek);
-      datasets.push({
-        label: `Total Usage Last Week`,
-        borderColor: '#bae1ff',
-        backgroundColor: '#bae1ff',
-        data: lastWeekTotal,
-        fill: true,
-      });
-    }
-    return {
-      labels: lastWeek ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] : week,
-      datasets: datasets,
-    };
-  }
 
-  weekWatchSitesLineChart(today = new Date()) {
-    var datasets = [];
-    const week = this.getWeek(today);
+  weekWatchSitesLineChart(today, isMonth) {
+    if (today == null) today = this.today;
+    var datasets = [],
+      week;
+    isMonth ? (week = this.getMonth(today)) : (week = this.getWeek(today));
     const weekUsage = this.WatchSites.weekWatchSitesUsage(week);
-    const colors = this.colors(Object.keys(weekUsage).length);
+    const colors = this.colors(); //Object.keys(weekUsage).length);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
       datasets.push({
-        label: url,
-        borderColor: colors.pop(),
+        label: url.replace(/([.]\w+)$/, '').replace(/^www\./, ''),
+        borderColor: colors.shift(),
         data: usageArr,
         fill: false,
       });
@@ -691,17 +814,66 @@ export class ChartData {
     };
   }
 
-  weekSiteUsageLineChart(urls, day) {
-    const week = this.thisWeek;
-    if (day != null) {
-      week = this.getWeek(day);
+  /**
+   *
+   * @param {Date} date
+   * @param {Number} n 0 = just this wk, 1 = this + last wk; n weeks before this date
+   */
+  watchSitesTotalLineChart(date, n, isWatchSites, isMonth) {
+    var datasets = [],
+      labels = [],
+      urls = [];
+    const colors = ['#ffb3ba', '#bae1ff', '#baffc9', '#ffdfba', '#ffffba'];
+    if (date == null) date = this.today;
+    if (n == null) n = 0;
+    if (isWatchSites) urls = this.getWatchSites();
+    if (!isMonth) labels = ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'];
+    for (var k = 0; k < n; k++) {
+      var week, weekTotal, dateK;
+      if (isMonth) {
+        dateK = moment(date).subtract(k, 'month');
+        week = this.getMonth(dateK);
+        weekTotal = Array(week.length).fill(0);
+        labels = week;
+      } else {
+        dateK = moment(date).subtract(k, 'week');
+        week = this.getWeek(dateK);
+        weekTotal = Array(7).fill(0);
+      }
+      for (var i = 0; i < week.length; i++) {
+        if (!isWatchSites) urls = this.timeFrameVisitedSites(null, null, week);
+        urls.forEach(url => {
+          var dayUsage = this.TimeTable.getDaySiteUsage(week[i], url);
+          if (dayUsage != {} && 'total' in dayUsage) weekTotal[i] += Math.floor(dayUsage.total / 60);
+        });
+      }
+      if (isMonth) (weekTotal[6] /= 1000), (weekTotal[8] /= 100), (weekTotal[10] /= 500), (weekTotal[13] /= 3000); //todo: delete
+      const color = colors.shift();
+      datasets.push({
+        label: isMonth ? `Month of ${dateK.format('MM/DD')}` : `Week of ${dateK.format('MM/DD')}`,
+        borderColor: color,
+        backgroundColor: fn.hex2rgba(color, 0.2),
+        fill: true,
+        data: weekTotal,
+      });
     }
-    var datasets = [];
-    const colors = this.colors(urls.length);
+    return {
+      labels: labels,
+      datasets: datasets,
+    };
+  }
+
+  weekSiteUsageLineChart(urls, day, isMonth) {
+    if (urls == null) return {};
+    if (day == null) day = this.today;
+    var week,
+      datasets = [];
+    isMonth ? (week = this.getMonth(day)) : (week = this.getWeek(day));
+    const colors = this.colors(); //urls.length);
     urls.forEach(url => {
       datasets.push({
         label: url,
-        borderColor: colors.pop(),
+        borderColor: colors.shift(),
         fill: false,
         data: this.TimeTable.siteWeekTime(week, url),
       });
@@ -712,25 +884,30 @@ export class ChartData {
     };
   }
 
-  monthSitesLineChartData() {}
-  monthTotalTimeLineChart() {}
-
-  timeFrameVisitedSites(start, end) {
-    const timeFrame = this.getTimeFrame(start, end);
+  timeFrameVisitedSites(start, end, week) {
+    var timeFrame;
+    if (week) timeFrame = week;
+    else timeFrame = this.getTimeFrame(start, end);
     return this.TimeTable.topNUsageSites(-1, timeFrame);
   }
   // ============================= Pie charts =========================================
 
   dayChartPieData(date, max = 15) {
-    if (date == null) {
-      date = this.today;
-    }
-    const dayUsage = this.TimeTable.getDayUsageSorted(date);
-    let labels = Object.keys(dayUsage).slice(0, max);
-    let data = Object.values(dayUsage).slice(0, max);
+    if (date == null) date = moment(this.today).format('YYYY-MM-DD');
+    else date = moment(date).format('YYYY-MM-DD');
+    var dayUsage = this.TimeTable.getDayUsage(date);
+    dayUsage = Object.entries(dayUsage)
+      .sort((a, b) => b[1]['total'] - a[1]['total'])
+      .slice(0, max);
+    var labels = dayUsage.map(arr => {
+      return arr[0];
+    });
+    var series = dayUsage.map(arr => {
+      return Math.floor(arr[1]['total'] / 60);
+    });
     return {
       labels: labels,
-      series: data,
+      series: series,
     };
     // return {
     //     labels: labels,
@@ -774,7 +951,6 @@ export class ChartData {
   timeFrameWatchSitesHalfDonut(start, end, max = 10) {
     const week = this.getTimeFrame(start, end);
     const weekUsage = this.WatchSites.weekTopWatchSites(week);
-    console.log(weekUsage);
     let labels = weekUsage.map(x => x[0]).slice(0, max);
 
     let data = weekUsage.map(x => x[1]).slice(0, max);
@@ -796,13 +972,15 @@ export class ChartData {
    * @param {Number} n - number of weeks away from data
    * @param {String} date
    */
-  nWeeksWatchSitesChartRadar(n, date) {
+  nWeeksWatchSitesChartRadar(n, date, isMonth) {
     if (date == null) date = this.today;
     var datasets = [];
-    const colors = this.colors(n);
     const watchSites = this.WatchSites.getWatchSites();
+    const backgroundColors = ['rgba(255,99,132, 0.2)', 'rgba(54,162,235, 0.2)', 'rgba(153,102,255, 0.2)', 'rgba(75,192,192, 0.2)', 'rgba(255,159,64, 0.2)'];
+    const borderColors = ['rgb(255,99,132)', 'rgb(54,162,235)', 'rgb(153,102,255)', 'rgb(75,192,192)', 'rgb(255,159,64)'];
     for (var i = 0; i < n; i++) {
-      const week = this.getWeek(date);
+      var week;
+      isMonth ? (week = this.getMonth(date)) : (week = this.getWeek(date));
       const weekTotal = [];
       watchSites.forEach(url => {
         weekTotal.push(
@@ -811,19 +989,19 @@ export class ChartData {
           })
         );
       });
-      const color = colors.pop();
+      const color = borderColors.shift();
       datasets.push({
-        label: `week of ${fn.getDateString(date)}`,
+        label: isMonth ? `month of ${fn.getDateString(date)}` : `week of ${fn.getDateString(date)}`,
         borderColor: color,
-        backgroundColor: color,
-        pointBorderColor: '#fff',
+        backgroundColor: backgroundColors.shift(),
+        pointBorderColor: color,
         data: weekTotal,
         fill: true,
       });
-      date = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7);
+      isMonth ? (date = moment(date).subtract(1, 'months')) : (date = moment(date).subtract(1, 'week'));
     }
     return {
-      labels: watchSites,
+      labels: watchSites.map(url => url.replace(/([.]\w+)$/, '').replace(/^www\./, '')),
       datasets: datasets,
     };
   }
@@ -837,23 +1015,48 @@ export class ChartData {
    * end - start <= 7
    * @return day -> {url: total time on the day} filtered
    */
-  siteUsageStackedBarData(start, end) {
+  siteUsageStackedBarData(start, end, watchSites) {
     const timeFrame = this.getTimeFrame(start, end);
     let weekUsage = {};
     let weekTotalTime = 0;
-    let dayTotalTimes = [0, 0, 0, 0, 0, 0, 0];
+    let dayTotalTimes = Array(timeFrame.length).fill(0);
     for (var i = 0; i < timeFrame.length; i++) {
       const dayUsage = this.TimeTable.getDayUsage(timeFrame[i]);
       for (let [url, usage] of Object.entries(dayUsage)) {
-        if (!(url in weekUsage)) weekUsage[url] = [0, 0, 0, 0, 0, 0, 0];
+        if (!(url in weekUsage)) weekUsage[url] = Array(timeFrame.length).fill(0);
         const total = Math.floor(usage['total'] / 60);
         weekUsage[url][i] = total;
         weekTotalTime += total;
         dayTotalTimes[i] += total;
       }
     }
-    const colors = this.colors(Object.keys(weekUsage).length);
+    const colors = this.colors(); //Object.keys(weekUsage).length);
     let datasets = [];
+    const datalabels = {
+      formatter: function(value, context) {
+        if (value > 1) {
+          const url = context.dataset.label;
+          return url.replace(/([.]\w+)$/, '').replace(/^www\./, '');
+        } else {
+          return '';
+        }
+      },
+    };
+    if (watchSites) {
+      const urls = this.WatchSites.getWatchSites();
+      urls.forEach(url => {
+        datasets.push({
+          label: url,
+          backgroundColor: colors.shift(),
+          data: weekUsage[url],
+        });
+      });
+      return {
+        labels: timeFrame,
+        datasets: datasets,
+        datalabels: datalabels,
+      };
+    }
     const weekMinutesThreshold = Math.floor(weekTotalTime / 100);
     const daysThreshold = Math.floor((end - start) / 3);
     for (let [url, usageArr] of Object.entries(weekUsage)) {
@@ -872,18 +1075,9 @@ export class ChartData {
       ) {
         datasets.push({
           label: url,
-          backgroundColor: colors.pop() || 'RED',
+          backgroundColor: colors.shift(),
           data: usageArr,
-          datalabels: {
-            formatter: function(value, context) {
-              if (value > 1) {
-                const url = context.dataset.label;
-                return url.replace(/([.]\w+)$/, '').replace(/^www\./, '');
-              } else {
-                return '';
-              }
-            },
-          },
+          datalabels: datalabels,
         });
       }
     }
@@ -903,45 +1097,20 @@ export class ChartData {
    */
   daySitesTimeline(date, dayFrame, urls, watchSites) {
     if (date == null) date = this.today;
-    if (watchSites) {
+    if (urls) {
+      var data = this.TimeTable.getDaySiteVisits(date, dayFrame, urls);
+      return {
+        name: fn.getDateString(date),
+        data: data,
+      };
+    } else if (watchSites) {
       return {
         name: fn.getDateString(date),
         data: this.WatchSites.getDaySiteVisits(date, dayFrame),
       };
+    } else {
+      return {};
     }
-    var data = this.TimeTable.getDaySiteVisits(date, dayFrame, urls);
-    return {
-      name: fn.getDateString(date),
-      data: data,
-    };
-    // var visits = [];
-    // for (let [url, usage] of Object.entries(timeTable[date])) {
-    //     if (usage['total'] > 600) {
-    //         var data = [];
-    //         usage['visits'].forEach(interval => {
-    //             typeof interval === 'object' &&
-    //                 interval[1] - interval[0] > 300 &&
-    //                 data.push({
-    //                     x: date,
-    //                     y: interval,
-    //                 });
-    //         });
-    //         visits.push({
-    //             name: url,
-    //             data: data,
-    //         });
-    //     }
-    // }
-    // for (let [url, usage] of Object.entries(timeTable[date])){
-    //     if (usage['total'] > 600){
-    //         var data = []
-    //         usage['visits'].forEach((interval) => {
-    //             typeof(interval) === "object" && data.push({x: url, y: interval})
-    //         });
-    //         visits.push({name: url, data: data})
-    //     }
-    // }
-    // return visits;
   }
 
   daysSitesTimeline(timeFrame) {
@@ -964,53 +1133,69 @@ export class ChartData {
     for (let intervalObj of intervals) {
       let interval = intervalObj['timeRange'];
       if (interval[0].getHours() == currentHour && interval[1].getHours() > currentHour) {
-        intByHours[currentHour].push({
-          timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
-          val: intervalObj['val'],
-        });
-        currentHour += 1;
-        while (interval[1].getHours() > currentHour) {
+        if (currentHour < intByHours.length) {
           intByHours[currentHour].push({
-            timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+            timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
             val: intervalObj['val'],
           });
+        }
+        currentHour += 1;
+        while (interval[1].getHours() > currentHour) {
+          if (currentHour < intByHours.length) {
+            intByHours[currentHour].push({
+              timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+              val: intervalObj['val'],
+            });
+          }
           currentHour += 1;
         }
-        intByHours[currentHour].push({
-          timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
-          val: intervalObj['val'],
-        });
+        if (currentHour < intByHours.length) {
+          intByHours[currentHour].push({
+            timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
+            val: intervalObj['val'],
+          });
+        }
       } else if (interval[0].getHours() == currentHour && interval[1].getHours() == currentHour) {
-        intByHours[currentHour].push({
-          timeRange: [interval[0], interval[1]],
-          val: intervalObj['val'],
-        });
+        if (currentHour < intByHours.length) {
+          intByHours[currentHour].push({
+            timeRange: [interval[0], interval[1]],
+            val: intervalObj['val'],
+          });
+        }
       } else if (interval[0].getHours() > currentHour) {
         while (interval[0].getHours() > currentHour) {
           currentHour += 1;
         }
         if (interval[1].getHours() == currentHour) {
-          intByHours[currentHour].push({
-            timeRange: [interval[0], interval[1]],
-            val: intervalObj['val'],
-          });
-        } else {
-          intByHours[currentHour].push({
-            timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
-            val: intervalObj['val'],
-          });
-          currentHour += 1;
-          while (interval[1].getHours() > currentHour) {
+          if (currentHour < intByHours.length) {
             intByHours[currentHour].push({
-              timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+              timeRange: [interval[0], interval[1]],
               val: intervalObj['val'],
             });
+          }
+        } else {
+          if (currentHour < intByHours.length) {
+            intByHours[currentHour].push({
+              timeRange: [interval[0], this.getNewDateByHour(currentHour + 1, interval[0])],
+              val: intervalObj['val'],
+            });
+          }
+          currentHour += 1;
+          while (interval[1].getHours() > currentHour) {
+            if (currentHour < intByHours.length) {
+              intByHours[currentHour].push({
+                timeRange: [this.getNewDateByHour(currentHour, interval[0]), this.getNewDateByHour(currentHour + 1, interval[0])],
+                val: intervalObj['val'],
+              });
+            }
             currentHour += 1;
           }
-          intByHours[currentHour].push({
-            timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
-            val: intervalObj['val'],
-          });
+          if (currentHour < intByHours.length) {
+            intByHours[currentHour].push({
+              timeRange: [this.getNewDateByHour(currentHour, interval[0]), interval[1]],
+              val: intervalObj['val'],
+            });
+          }
         }
       }
     }
@@ -1018,27 +1203,66 @@ export class ChartData {
   }
 
   dayTimeline(day = this.today) {
-    const date = fn.getDateString(day);
+    const date = moment(day).format('YYYY-MM-DD');
     const visits = this.TimeTable.getDayVisits(date);
-    var intByHour = this.breakDayToHoursIntervals(visits);
-    return intByHour;
-    return [
-      {
-        group: date,
-        data: [
-          {
-            label: '',
-            data: visits,
-          },
-        ],
-      },
-    ];
+    if (visits.length > 0) {
+      var intByHour = this.breakDayToHoursIntervals(visits);
+      return intByHour;
+    }
+    return null;
   }
 
   // ============================= Table =========================================
 
-  weekSitesUsageFrequency(date = this.today) {
+  dayUsageTable(date, watchSite) {
+    if (date == null) date = this.today;
+    const dayUsage = this.TimeTable.getDayUsage(moment(date).format('YYYY-MM-DD'));
+    var data = [],
+      urls;
+    if (watchSite) urls = this.getWatchSites();
+    for (let [url, usage] of Object.entries(dayUsage)) {
+      if (usage['total'] / 60 > 1) {
+        if (watchSite) {
+          if (url in urls)
+            data.push({
+              name: url,
+              total: Math.floor(usage['total'] / 60),
+              frequency: usage['visits'].length - 2,
+            });
+        } else {
+          data.push({
+            name: url,
+            total: Math.floor(usage['total'] / 60),
+            frequency: usage['visits'].length - 2,
+          });
+        }
+      }
+    }
+    return data.sort((a, b) => {
+      return b['total'] - a['total'];
+    });
+  }
+
+  weekSitesUsageFrequency(date) {
+    if (date == null) date = this.today;
     const urlUsage = this.TimeTable.getSitesWeekTotalFrequencyUsage(this.getWeek(date));
+    var data = [];
+    for (let [url, usage] of Object.entries(urlUsage)) {
+      if (usage['total'] > 0) {
+        data.push({
+          name: url,
+          total: usage['total'],
+          frequency: usage['frequency'],
+          timePerVist: Math.round((usage['total'] * 100) / usage['frequency']) / 100,
+        });
+      }
+    }
+    return data;
+  }
+
+  timeFrameWatchSitesUsageFrequency(start, end) {
+    const timeFrame = this.getTimeFrame(start, end);
+    const urlUsage = this.WatchSites.getTimeFrameTotalFrequencyUsage(timeFrame);
     var data = [];
     for (let [url, usage] of Object.entries(urlUsage)) {
       data.push({
@@ -1046,6 +1270,8 @@ export class ChartData {
         total: usage['total'],
         frequency: usage['frequency'],
         timePerVist: Math.round((usage['total'] * 100) / usage['frequency']) / 100,
+        freqDay: Math.round(usage['frequency'] / timeFrame.length),
+        timeBtwVisit: Math.round(usage['timeBtwVisit'] / 60),
       });
     }
     return data;
@@ -1054,7 +1280,9 @@ export class ChartData {
   // ============================= Scatter =========================================
   weekSiteVisitScatter(date, urls, watchSites) {
     if (date == null) date = this.today;
-    var fetchUrls;
+    var fetchUrls,
+      labels = [],
+      data = [];
     if (watchSites) fetchUrls = this.WatchSites.getWatchSites();
     if (urls) fetchUrls = urls;
     const week = this.getWeek(date);
@@ -1063,67 +1291,115 @@ export class ChartData {
       urlVisits[url] = [];
       week.forEach(day => {
         const dayVisits = this.TimeTable.getSiteDayVisits(day, url);
+        if (dayVisits == []) return;
         for (var i = 0; i < dayVisits.length; i++) {
-          typeof dayVisits[i][0] === 'number' &&
+          if (typeof dayVisits[i] !== 'number') {
+            var d = new Date(dayVisits[i][0]),
+              h = d.getHours(),
+              m = d.getMinutes();
+            var x = new Date(day).setHours(0, 0, 0, 0);
+            if (!labels.includes(x)) labels.push(x);
             urlVisits[url].push({
-              x: new Date(day).getTime(),
-              y: new Date(dayVisits[i][0]),
+              x: x,
+              y: h * 60 + m,
             });
+          }
         }
       });
     });
-    var data = [];
-    const colors = this.colors(fetchUrls.length);
+    const colors = this.colors(); //fetchUrls.length);
     for (let [url, dataObj] of Object.entries(urlVisits)) {
+      // console.log(url)
+      // dataObj.forEach(obj => console.log(obj.x, new Date(obj.x)))
       // data.push({name: url, data: dataObj})    apex
+      const color = colors.shift();
       data.push({
         label: url,
-        borderColor: colors.pop(),
+        borderColor: color,
+        backgroundColor: color,
         data: dataObj,
       });
     }
     return {
+      labels: labels,
       datasets: data,
     };
   }
-
-  weekTopNFrequentSites(n = 10, date = this.today) {
-    return this.TimeTable.topNFrequentSites(n, this.getWeek(date));
-  }
-
-  weekTopNUsageSites(n = 10, date = this.today) {
-    return this.TimeTable.topNUsageSites(n, this.getWeek(date));
-  }
-
+  //=================== Heat map
   /**
    *
-   * @param {Date} date
-   * @param {number} n
-   * @param {Object} timeTable
-   * @returns {LineChartDataObject} {labels: Array, datasets: Array[Objects]}
+   * @param {Array} interval = single [milisecond enter, miliseconds exit]
+   * @returns {1: minutes in hour 1, 2: minutes in hour 2...}
    */
-  weekTopNSitesLineChartData(date, n, timeTable) {
-    var sitesUsage = {}; // url: [mon_usage, tues_usage ...]
-    const week = this.getWeek(date);
-    const topNSites = this.TimeTableData.topNUsageSites(n, week);
-    topNSites.forEach(site => {
-      sitesUsage[site] = this.TimeTableData.siteWeekTime(week, site, timeTable);
-    });
-    var datasets = [];
-    for (let [url, time_arr] of Object.entries(sitesUsage))
-      datasets.push({
-        data: time_arr,
-        label: url,
-        fill: false,
-      });
-    const colors = this.colors(n);
-    datasets.forEach(dataset => {
-      dataset['borderColor'] = colors.pop();
-    });
-    return {
-      labels: ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'],
-      datasets: datasets,
-    };
+  breakIntervalByHour(interval) {
+    var start = moment(interval[0]),
+      end = moment(interval[1]),
+      data = {};
+    //console.log(start.toDate(), end.toDate())
+    if (start.hour() < end.hour()) {
+      data[start.hour()] = 60 - parseInt(start.minute());
+      if (end.hour() - start.hour() == 1) data[end.hour()] = parseInt(end.minute());
+      else {
+        start.add('1', 'hour');
+        while (start.hour() < end.hour()) {
+          data[start.hour()] = 60;
+          start.add('1', 'hour');
+        }
+        data[end.hour()] = parseInt(end.minute());
+      }
+    } else {
+      data[start.hour()] = parseInt(end.minute()) - parseInt(start.minute());
+    }
+    return data;
   }
-  monthChartPieData() {}
+
+  weekSiteVisitHeatMap(date, sites, watchSites) {
+    if (date == null) date = this.today;
+    const timeFrame = this.getWeek(date);
+    // const timeFrame = this.getTimeFrame(start, end);
+    var urls,
+      urlVisits = {};
+    if (sites) urls = sites;
+    else if (watchSites) urls = this.getWatchSites();
+    else return;
+    var dataseries = {}; // url => [{name: "1AM", data: [{x: Day1, y: 30mins}]}]
+    urls.forEach(url => {
+      if (!(url in urlVisits)) urlVisits[url] = {}; // url => {1AM: [day1 minutes, day2_minutes, ...]
+      for (var k = 0; k < timeFrame.length; k++) {
+        const dayVisits = this.TimeTable.getSiteDayVisits(timeFrame[k], url);
+        // console.log(url, dayVisits);
+        if (dayVisits == []) return;
+        for (var i = 0; i < dayVisits.length; i++) {
+          if (typeof dayVisits[i] !== 'number') {
+            const hoursVisit = this.breakIntervalByHour(dayVisits[i]);
+            for (let [hour, minutes] of Object.entries(hoursVisit)) {
+              if (!(hour in urlVisits[url])) urlVisits[url][hour] = Array(timeFrame.length).fill(0);
+              urlVisits[url][hour][k] += parseInt(minutes);
+              // console.log(hoursVisit, urlVisits[url][hour])
+            }
+          }
+        }
+      }
+      // console.log(url, urlVisits[url]);
+      dataseries[url] = [];
+      for (var hour = 0; hour < 24; hour++) {
+        if (hour in urlVisits[url]) {
+          var hourObj = {
+            name: hour,
+            data: [],
+          };
+          for (var dayCounter = 0; dayCounter < urlVisits[url][hour].length; dayCounter++) {
+            const minutesInDay = urlVisits[url][hour][dayCounter];
+            hourObj.data.push({
+              x: timeFrame[dayCounter],
+              y: minutesInDay,
+            });
+          }
+          dataseries[url].push(hourObj);
+        }
+      }
+      // console.log(dataseries[url]);
+    });
+    return dataseries;
+  }
 }
