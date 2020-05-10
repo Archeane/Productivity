@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <v-card style="height: 600px; width: 400px;">
+    <v-card style="height: 800px; width: 400px;">
       <v-toolbar dense width="400px;" flat>
         <v-img src="../icons/PRODUCTIVITY-48.png" height="38" width="30" style="margin-left:-12px;"></v-img><v-toolbar-title>Productivity</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -82,7 +82,7 @@ function parseDomainFromUrl(e) {
   var t, n;
   return (n = document.createElement('a')), (n.href = e), (t = n.hostname);
 }
-
+import moment from 'moment';
 export default {
   name: 'app',
   data: () => ({
@@ -100,14 +100,26 @@ export default {
     await this.chartData.init();
     this.currentTab = await getCurrentTab();
 
-    const pieData = this.chartData.dayChartPieData();
+    const pieData = this.chartData.dayChartPieData(
+      moment()
+        .subtract(1, 'd')
+        .toDate()
+    );
     this.pieSeries = pieData.series;
     this.pieLabels = pieData.labels;
-    this.tableData = this.chartData.dayUsageTable();
+    this.tableData = this.chartData.dayUsageTable(
+      moment()
+        .subtract(1, 'd')
+        .toDate()
+    );
 
-    this.timelineData = this.chartData.dayTimeline(new Date());
-    this.stackedBarData = this.chartData.siteUsageStackedBarData(-7, 0, true);
-    this.watchSitesTotalTime = this.chartData.timeFrameWatchSitesTotalUsage(-1, 0)[0];
+    this.timelineData = this.chartData.dayTimeline(
+      moment()
+        .subtract(1, 'd')
+        .toDate()
+    );
+    this.stackedBarData = this.chartData.siteUsageStackedBarData(-8, -1, true);
+    this.watchSitesTotalTime = this.chartData.timeFrameWatchSitesTotalUsage(-2, -1)[0];
 
     this.loaded = true;
   },

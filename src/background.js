@@ -482,7 +482,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     sendResponse({ done: watchSites });
   }
   if (message.request == 'addWatchSite') {
-    var url = message.url;
+    var url = fn.parseDomainFromUrl(message.url);
     addWatchSites(url);
   }
   if (message.request == 'removeWatchSite') {

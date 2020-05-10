@@ -232,7 +232,7 @@ export default {
     this.weekChartData.stackedBar = this.chartDataProcessor.siteUsageStackedBarData(-3, 0);
     this.weekChartData.usageFrequencyTable = this.chartDataProcessor.weekSitesUsageFrequency();
 
-    this.weekChartData.totalLine = this.chartDataProcessor.watchSitesTotalLineChart(null, 2, false, this.lineIsMonth);
+    this.weekChartData.totalLine = this.chartDataProcessor.watchSitesTotalLineChart(null, 3, false, this.lineIsMonth);
     this.weekChartData.totalLineOptions = {
       plugins: {
         datalabels: {
