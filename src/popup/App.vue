@@ -118,8 +118,8 @@ export default {
         .subtract(1, 'd')
         .toDate()
     );
-    this.stackedBarData = this.chartData.siteUsageStackedBarData(-8, -1, true);
-    this.watchSitesTotalTime = this.chartData.timeFrameWatchSitesTotalUsage(-2, -1)[0];
+    this.stackedBarData = this.chartData.siteUsageStackedBarData(-7, 0, true);
+    this.watchSitesTotalTime = this.chartData.timeFrameWatchSitesTotalUsage(-1, 0)[0];
 
     this.loaded = true;
   },

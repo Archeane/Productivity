@@ -14,6 +14,7 @@ export default {
     chartSeries: { type: Object, default: {} },
   },
   data: function() {
+    console.log(this.chartSeries);
     return {
       chartOptions: {
         chart: {
@@ -58,7 +59,7 @@ export default {
           theme: 'dark',
         },
       },
-      series: [this.chartSeries],
+      series: this.chartSeries,
     };
   },
 };

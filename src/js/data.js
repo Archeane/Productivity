@@ -1099,17 +1099,91 @@ export class ChartData {
     if (date == null) date = this.today;
     if (urls) {
       var data = this.TimeTable.getDaySiteVisits(date, dayFrame, urls);
-      return {
-        name: fn.getDateString(date),
-        data: data,
-      };
+      return [
+        {
+          name: fn.getDateString(date),
+          data: data,
+        },
+      ];
     } else if (watchSites) {
-      return {
-        name: fn.getDateString(date),
-        data: this.WatchSites.getDaySiteVisits(date, dayFrame),
-      };
+      return [
+        {
+          name: fn.getDateString(date),
+          data: this.WatchSites.getDaySiteVisits(date, dayFrame),
+        },
+      ];
     } else {
       return {};
+    }
+  }
+
+  watchSitesWeekTimeline(dayFrame, date, separateUrl) {
+    if (date == null) date = this.today;
+    const week = this.getWeek(date);
+    var sitesData = {};
+    if (separateUrl) {
+      week.forEach(day => {
+        var dayData = this.WatchSites.getDaySiteVisits(day, dayFrame);
+        dayData.forEach(visit => {
+          var url = visit.x;
+          if (!(url in sitesData)) sitesData[url] = [];
+          var s = moment(visit.y[0]),
+            e = moment(visit.y[1]);
+          var h = s.hour(),
+            m = s.minute(),
+            h1 = e.hour(),
+            m1 = e.minute(),
+            interval = [0, 0];
+          interval[0] = s
+            .startOf('week')
+            .hour(h)
+            .minute(m)
+            .valueOf();
+          interval[1] = s
+            .startOf('week')
+            .hour(h1)
+            .minute(m1)
+            .valueOf();
+          sitesData[url].push({
+            x: day,
+            y: interval,
+          });
+        });
+      });
+      var series = [];
+      for (let [url, usage] of Object.entries(sitesData)) {
+        series.push({ name: url, data: usage });
+      }
+      return series;
+    } else {
+      var data = [];
+      week.forEach(day => {
+        var dayData = this.WatchSites.getDaySiteVisits(day, dayFrame);
+        dayData.forEach(visit => {
+          var s = moment(visit.y[0]),
+            e = moment(visit.y[1]);
+          var h = s.hour(),
+            m = s.minute(),
+            h1 = e.hour(),
+            m1 = e.minute(),
+            interval = [0, 0];
+          interval[0] = s
+            .startOf('week')
+            .hour(h)
+            .minute(m)
+            .valueOf();
+          interval[1] = s
+            .startOf('week')
+            .hour(h1)
+            .minute(m1)
+            .valueOf();
+          data.push({
+            x: day,
+            y: interval,
+          });
+        });
+      });
+      return [{ data: data }];
     }
   }
 

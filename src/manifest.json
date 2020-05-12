@@ -1,6 +1,6 @@
 {
-  "name": "productivity",
-  "description": "A Vue.js web extension",
+  "name": "Productivity: Web Time Tracking & Data Analytics",
+  "description": "Discover your browsing and work habits.",
   "version": "1.0.0.1",
   "manifest_version": 2,
   "icons": {
@@ -19,5 +19,5 @@
   "offline_enabled": true,
   "optional_permissions": ["\u003Call_urls>"],
   "content_security_policy": "script-src 'self' 'unsafe-eval'",
-  "permissions": ["tabs", "idle", "storage", "unlimitedStorage", "webRequest", "webRequestBlocking", "https://www.facebook.com/"]
+  "permissions": ["tabs", "idle", "storage", "unlimitedStorage"]
 }

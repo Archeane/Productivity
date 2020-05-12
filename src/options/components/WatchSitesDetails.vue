@@ -60,7 +60,7 @@
                   </v-row>
                 </v-col>
               </v-row>
-              <div v-if="sitesIntervals.data.length > 0">
+              <div v-if="sitesIntervals.length > 0">
                 <timeline-site-chart :chartSeries="sitesIntervals" :key="sitesIntervals" />
               </div>
               <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes today 🏆</v-card-subtitle>
@@ -175,7 +175,10 @@ export default {
 
     var start = moment(this.timelineDate + ' ' + this.timelineTimeStart).toDate();
     var end = moment(this.timelineDate + ' ' + this.timelineTimeEnd).toDate();
-    this.sitesIntervals = this.chartDataProcessor.daySitesTimeline(moment(this.timelineDate).toDate(), [start, end], null, true);
+    //this.sitesIntervals = this.chartDataProcessor.daySitesTimeline(moment(this.timelineDate).toDate(), [start, end], null, true);
+    //console.log(this.sitesIntervals);
+    this.sitesIntervals = this.chartDataProcessor.watchSitesWeekTimeline([start, end]);
+    // console.log(this.sitesIntervals);
 
     this.sitesVisitsScatter = this.chartDataProcessor.weekSiteVisitScatter(null, null, true);
     this.heatmapData = this.chartDataProcessor.weekSiteVisitHeatMap(null, null, true);

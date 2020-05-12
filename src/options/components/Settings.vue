@@ -1,11 +1,11 @@
 <template>
   <v-container fluid fill-height>
     <v-row dense>
-      <h2 class="font-weight-light mr-auto ml-3">Settings</h2>
+      <h2 class="font-weight-light mr-auto ml-3">Options</h2>
       <span class="subtitle-2 ml-auto mr-3">
-        Have you find this tool useful? Please make a donation! <br />
-        Any amount is appreciated 😁</span
-      >
+        Have you find this tool useful? Please make a donation!
+        <br />Any amount is appreciated 😁
+      </span>
       <div>
         <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
           <input type="hidden" name="cmd" value="_donations" />
@@ -49,7 +49,7 @@
           <v-form v-model="valid" onsubmit="return false;">
             <p class="subtitle-1 pl-5 mt-5">You can put sites you want to reduce browsing time, and track your progress in our tool!</p>
             <p class="subtitle-1 pl-5">Add a watch site:</p>
-            <v-text-field v-model="watchSite" :rules="validate" label="www.facebook.com" required style="max-width: 80%;" class="ml-auto mr-auto pb-5">
+            <v-text-field v-model="watchSite" :rules="validate" label="https://www.facebook.com" required style="max-width: 80%;" class="ml-auto mr-auto pb-5">
               <template v-slot:append>
                 <v-btn :disabled="!valid" @click="addWatchSite" depressed tile color="primary"> <v-icon left>fas fa-plus</v-icon>Add </v-btn>
               </template>
@@ -110,10 +110,6 @@ export default {
         .format('YYYY-MM-DD'),
       moment().format('YYYY-MM-DD'),
     ],
-    urlRules: [
-      v => !!v || 'URL is required',
-      v => /^((ftp|http|https):\/\/)?www\.([A-z0-9]+)\.([A-z]{2,})/.test(v) || 'Invalid URL: URL must contain .www and domain name of at least 2 characters',
-    ],
   }),
   async mounted() {
     this.watchSites = await getWatchSites();
@@ -151,6 +147,10 @@ export default {
     exportToCSV() {
       exportToCSV();
     },
+    parseDomainFromUrl(e) {
+      var t, n;
+      return (n = document.createElement('a')), (n.href = e), (t = n.hostname);
+    },
   },
   computed: {
     clearDataRangeText() {
@@ -159,8 +159,12 @@ export default {
     validate() {
       return [
         v => !!v || 'URL is required',
-        v => /^((ftp|http|https):\/\/)?www\.([A-z0-9]+)\.([A-z]{2,})/.test(v) || 'Invalid URL: URL must contain .www and domain name of at least 2 characters',
-        v => !this.watchSites.includes(v) || `${v} is already an watch site!`,
+        //v => /^((ftp|http|https):\/\/)?www\.([A-z0-9]+)\.([A-z]{2,})/.test(v) || 'Invalid URL: URL must contain .www and domain name of at least 2 characters',
+        v =>
+          /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:[/?#]\S*)?$/i.test(
+            v
+          ) || 'Invalid URL: URL must begin with http:// and contain .www and domain name of at least 2 characters',
+        v => !this.watchSites.includes(this.parseDomainFromUrl(v)) || `${v} is already an watch site!`,
       ];
     },
   },

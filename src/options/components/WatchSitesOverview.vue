@@ -38,7 +38,7 @@
         <v-col cols="3">
           <v-card height="30vh">
             <v-card-title>
-              <span class="subtitle-2 font-weight-light">Total time:</span>
+              <span class="caption font-weight-light">Total (last {{ this.isMonth ? 30 : 7 }} days):</span>
               <span class="headline font-weight-bold" style="margin-left: auto;">{{ totalTime }}</span>
             </v-card-title>
             <v-divider></v-divider>
@@ -52,7 +52,7 @@
           </v-card>
         </v-col>
         <v-col cols="9" style="margin-top: -2vh;">
-          <h3>Watch Sites Usage Ranking</h3>
+          <h3>Watch Sites Usage Ranking Last {{ this.isMonth ? 30 : 7 }} Days</h3>
           <v-row :key="topSites">
             <v-col v-for="usage in topSites" :key="usage.url" cols="4">
               <v-card max-height="15vh">
