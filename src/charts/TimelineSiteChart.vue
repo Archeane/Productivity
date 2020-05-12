@@ -14,13 +14,13 @@ export default {
     chartSeries: { type: Object, default: {} },
   },
   data: function() {
-    console.log(this.chartSeries);
     return {
       chartOptions: {
         chart: {
           type: 'rangeBar',
           defaultLocale: 'en',
-          height: '80%',
+          width: '100%',
+          height: '100%',
         },
         plotOptions: {
           bar: {

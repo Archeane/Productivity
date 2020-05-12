@@ -763,6 +763,8 @@ export class ChartData {
       Object.prototype.toString.call(end) === '[object Date]'
     ) {
       (currDate = moment(start)), (lastDate = moment(end));
+    } else if (typeof start === 'number' && end instanceof Date) {
+      (currDate = moment(end).subtract(-1 * start, 'd')), (lastDate = moment(end));
     } else {
       return [];
     }
@@ -1119,7 +1121,7 @@ export class ChartData {
 
   watchSitesWeekTimeline(dayFrame, date, separateUrl) {
     if (date == null) date = this.today;
-    const week = this.getWeek(date);
+    const week = this.getTimeFrame(-2, date);
     var sitesData = {};
     if (separateUrl) {
       week.forEach(day => {
@@ -1134,12 +1136,11 @@ export class ChartData {
             h1 = e.hour(),
             m1 = e.minute(),
             interval = [0, 0];
-          interval[0] = s
-            .startOf('week')
+          interval[0] = moment(week[0])
             .hour(h)
             .minute(m)
             .valueOf();
-          interval[1] = s
+          interval[1] = moment(week[0])
             .startOf('week')
             .hour(h1)
             .minute(m1)
@@ -1167,13 +1168,11 @@ export class ChartData {
             h1 = e.hour(),
             m1 = e.minute(),
             interval = [0, 0];
-          interval[0] = s
-            .startOf('week')
+          interval[0] = moment(week[0])
             .hour(h)
             .minute(m)
             .valueOf();
-          interval[1] = s
-            .startOf('week')
+          interval[1] = moment(week[0])
             .hour(h1)
             .minute(m1)
             .valueOf();
