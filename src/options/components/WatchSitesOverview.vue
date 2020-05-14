@@ -178,11 +178,11 @@ export default {
         })
       );
 
-      this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(2, null, this.isMonth);
+      this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3, null, this.isMonth);
 
       this.weekSitesLine = this.chartDataProcessor.weekWatchSitesLineChart(null, this.isMonth);
 
-      this.weekTotalLineData = this.chartDataProcessor.watchSitesTotalLineChart(moment().toDate(), 1, true, this.isMonth);
+      this.weekTotalLineData = this.chartDataProcessor.watchSitesTotalLineChart(moment().toDate(), 3, true, this.isMonth);
       this.weekTotalLineOptions = {
         plugins: {
           datalabels: {

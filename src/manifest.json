@@ -1,7 +1,7 @@
 {
-  "name": "Productivity: Time Tracking & Data Analytics",
-  "description": "Discover your browsing and work habits.",
-  "version": "1.0.0.1",
+  "name": "Time Tracker & Data Analytics",
+  "description": "Track and analyze your web usage to discover your browsing habits, work patterns, distraction sites and much more!",
+  "version": "1.0.1",
   "manifest_version": 2,
   "icons": {
     "16": "icons/PRODUCTIVITY-16.png",
@@ -17,7 +17,6 @@
   },
   "options_page": "options/options.html",
   "offline_enabled": true,
-  "optional_permissions": ["\u003Call_urls>"],
   "content_security_policy": "script-src 'self' 'unsafe-eval'",
   "permissions": ["tabs", "idle", "storage", "unlimitedStorage"]
 }
