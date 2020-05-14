@@ -490,6 +490,8 @@ class WatchSitesData {
   }
 
   timeFrameTotalTime(timeFrame) {
+    if (this.watchSites == null || this.watchSites == []) return false;
+
     var timeFrameUsage = Array(timeFrame.length).fill(0);
     for (var i = 0; i < timeFrame.length; i++) {
       var day = timeFrame[i];
@@ -898,6 +900,7 @@ export class ChartData {
     if (date == null) date = moment(this.today).format('YYYY-MM-DD');
     else date = moment(date).format('YYYY-MM-DD');
     var dayUsage = this.TimeTable.getDayUsage(date);
+    if (dayUsage == {}) return null;
     dayUsage = Object.entries(dayUsage)
       .sort((a, b) => b[1]['total'] - a[1]['total'])
       .slice(0, max);
@@ -1046,6 +1049,7 @@ export class ChartData {
     };
     if (watchSites) {
       const urls = this.WatchSites.getWatchSites();
+      if (urls == null || urls == []) return false;
       urls.forEach(url => {
         datasets.push({
           label: url,
@@ -1290,6 +1294,7 @@ export class ChartData {
   dayUsageTable(date, watchSite) {
     if (date == null) date = this.today;
     const dayUsage = this.TimeTable.getDayUsage(moment(date).format('YYYY-MM-DD'));
+    if (dayUsage == {}) return null;
     var data = [],
       urls;
     if (watchSite) urls = this.getWatchSites();

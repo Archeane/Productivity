@@ -508,8 +508,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     console.log('export to csv request');
   }
   if (message.request == 'clearAllData') {
-    console.log(message);
-    //clearAllGeneratedData(), sendResponse({status: 200});
+    clearAllGeneratedData(), sendResponse({ status: 200 });
   }
 
   // if (message.request == 'getBlockedSites') {

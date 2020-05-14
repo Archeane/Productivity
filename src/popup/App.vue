@@ -2,7 +2,8 @@
   <div id="app">
     <v-card style="height: 800px; width: 400px;">
       <v-toolbar dense width="400px;" flat>
-        <v-img src="../icons/PRODUCTIVITY-48.png" height="38" width="30" style="margin-left:-12px;"></v-img><v-toolbar-title>Productivity</v-toolbar-title>
+        <v-img src="../icons/PRODUCTIVITY-48.png" height="38" width="30" style="margin-left:-12px;"></v-img>
+        <v-toolbar-title>Productivity</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn text x-small @click="redirectOptions('')">Stats</v-btn>
         <v-btn text x-small @click="redirectOptions('settings')">Options</v-btn>
@@ -24,9 +25,13 @@
         <v-tab>Timeline</v-tab>
         <v-tab>Watch Sites</v-tab>
         <v-tab-item>
-          <div class="chart-container">
+          <div v-if="pieContainsData" class="chart-container">
             <pie-chart :chartSeries="pieSeries" :chartLabels="pieLabels" />
           </div>
+          <h2 v-else>
+            Sorry, not enough data for today yet <br />
+            check back later!<br />
+          </h2>
           <div>
             <v-simple-table dense>
               <thead>
@@ -36,23 +41,39 @@
                   <th class="text-left">Visit Frequency</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody v-if="tableContainsData">
                 <tr v-for="item in tableData" :key="item.name">
                   <td>{{ item.name }}</td>
                   <td>{{ item.total }}</td>
                   <td>{{ item.frequency }}</td>
                 </tr>
               </tbody>
+              <h2 v-else>
+                Sorry, not enough data for today yet <br />
+                check back later!<br />
+              </h2>
             </v-simple-table>
           </div>
         </v-tab-item>
         <v-tab-item>
-          <timeline-chart v-if="timelineData" :data="timelineData" width="500" height="450" style="margin-left: -2rem;" />
+          <timeline-chart v-if="timelineContainsData" :data="timelineData" width="500" height="450" style="margin-left: -2rem;" />
+          <h2 v-else>
+            Sorry, not enough data for today yet <br />
+            check back later!<br />
+          </h2>
         </v-tab-item>
         <v-tab-item>
-          <div style="margin-top: 10px;">
-            <span style="font-size: 12px; font-weight: 100; margin-left: 10px;">TODAY'S TOTAL TIME:</span>
-            <span style="font-size: 26px; font-weight: 600; margin-left: 90px;">{{ minutesToHours(watchSitesTotalTime) }}</span>
+          <div v-if="containWatchSites">
+            <div style="margin-top: 10px;">
+              <span style="font-size: 12px; font-weight: 100; margin-left: 10px;">TODAY'S TOTAL TIME:</span>
+              <span style="font-size: 26px; font-weight: 600; margin-left: 90px;">{{ minutesToHours(watchSitesTotalTime) }}</span>
+            </div>
+          </div>
+          <div v-else class="ml-5">
+            <h2>
+              Not enough data for this feature! <br />Either you haven't added any watch sites (click the [+ Watch Sites button], or go to options), <br />
+              or you haven't visited any watch sites today for longer than 5 minutes yet!
+            </h2>
           </div>
           <stacked-bar-chart v-if="loaded" :chartdata="stackedBarData" style="padding-top: 5px;" />
         </v-tab-item>
@@ -89,43 +110,44 @@ export default {
     loaded: false,
     currentTab: null,
     chartData: new ChartData(),
+    containWatchSites: false,
+    pieContainsData: false,
     pieSeries: null,
     pieLabels: null,
     timelineData: null,
+    timelineContainsData: false,
     watchSitesTotalTime: 0,
     stackedBarData: null,
+    tableData: null,
+    tableContainsData: false,
   }),
   async mounted() {
     this.loaded = false;
     await this.chartData.init();
     this.currentTab = await getCurrentTab();
 
-    const pieData = this.chartData.dayChartPieData(
-      moment()
-        .subtract(1, 'd')
-        .toDate()
-    );
-    this.pieSeries = pieData.series;
-    this.pieLabels = pieData.labels;
-    this.tableData = this.chartData.dayUsageTable(
-      moment()
-        .subtract(1, 'd')
-        .toDate()
-    );
+    var pieData = this.chartData.dayChartPieData();
+    if (pieData == null || !('series' in pieData) || !('labels' in pieData) || pieData.series.length == 0 || pieData.series.length == 0) this.pieContainsData = false;
+    else {
+      this.pieSeries = pieData.series;
+      this.pieLabels = pieData.labels;
+      this.pieContainsData = true;
+    }
+    var tableData = this.chartData.dayUsageTable();
+    if (tableData != null) (this.tableData = tableData), (this.tableContainsData = true);
 
-    this.timelineData = this.chartData.dayTimeline(
-      moment()
-        .subtract(1, 'd')
-        .toDate()
-    );
-    this.stackedBarData = this.chartData.siteUsageStackedBarData(-7, 0, true);
-    this.watchSitesTotalTime = this.chartData.timeFrameWatchSitesTotalUsage(-1, 0)[0];
+    var timelineData = this.chartData.dayTimeline();
+    if (timelineData != null) (this.timelineData = timelineData), (this.timelineContainsData = true);
+    var stackedBarData = this.chartData.siteUsageStackedBarData(-7, 0, true);
+    if (stackedBarData) (this.stackedBarData = stackedBarData), (this.containWatchSites = true);
+    var watchSitesTotalTime = this.chartData.timeFrameWatchSitesTotalUsage(-1, 0)[0];
+    if (watchSitesTotalTime) (this.watchSitesTotalTime = watchSitesTotalTime), (this.containWatchSites = true);
 
     this.loaded = true;
   },
   methods: {
     minutesToHours: function(minutes) {
-      var h = Math.round(minutes / 60),
+      var h = Math.floor(minutes / 60),
         m = minutes % 60;
       return `${h} hrs ${m} mins`;
     },
