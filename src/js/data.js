@@ -181,6 +181,10 @@ export async function clearAllData() {
   });
 }
 
+function objIsEmpty(obj) {
+  return Object.keys(obj).length === 0 && obj.constructor === Object;
+}
+
 class TimeTableData {
   async init() {
     this.timeTable = await getTimeTable();
@@ -582,12 +586,14 @@ class WatchSitesData {
     this.watchSites.forEach(url => {
       for (var i = 0; i < week.length; i++) {
         const day = week[i];
+
         if (day in this.timeTable && url in this.timeTable[day]) {
           if (!(url in weekUsage)) weekUsage[url] = 0;
           weekUsage[url] += Math.floor(this.timeTable[day][url]['total'] / 60);
         }
       }
     });
+    if (objIsEmpty(weekUsage)) return null;
     return Object.entries(weekUsage).sort(function(a, b) {
       return weekUsage[b] - weekUsage[a];
     });
@@ -1027,6 +1033,7 @@ export class ChartData {
     let dayTotalTimes = Array(timeFrame.length).fill(0);
     for (var i = 0; i < timeFrame.length; i++) {
       const dayUsage = this.TimeTable.getDayUsage(timeFrame[i]);
+      if (objIsEmpty(dayUsage)) continue;
       for (let [url, usage] of Object.entries(dayUsage)) {
         if (!(url in weekUsage)) weekUsage[url] = Array(timeFrame.length).fill(0);
         const total = Math.floor(usage['total'] / 60);
@@ -1071,7 +1078,7 @@ export class ChartData {
         totalUsage > weekMinutesThreshold &&
         usageArr.filter(x => {
           return x !== 0;
-        }).length > daysThreshold &&
+        }).length >= daysThreshold &&
         usageArr.every((e, i) => {
           if (e != 0 && e < Math.floor(dayTotalTimes[i] / 100) * 2.5) {
             usageArr[i] = 0;
@@ -1157,7 +1164,10 @@ export class ChartData {
       });
       var series = [];
       for (let [url, usage] of Object.entries(sitesData)) {
-        series.push({ name: url, data: usage });
+        series.push({
+          name: url,
+          data: usage,
+        });
       }
       return series;
     } else {
@@ -1186,7 +1196,11 @@ export class ChartData {
           });
         });
       });
-      return [{ data: data }];
+      return [
+        {
+          data: data,
+        },
+      ];
     }
   }
 

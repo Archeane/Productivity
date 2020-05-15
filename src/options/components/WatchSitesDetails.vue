@@ -122,13 +122,13 @@
                   <div v-if="sitesIntervals.length > 0" class="mt-1">
                     <timeline-site-chart :chartSeries="sitesIntervalsCombined" :key="sitesIntervalsCombined" />
                   </div>
-                  <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes today 🏆</v-card-subtitle>
+                  <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes 🏆</v-card-subtitle>
                 </v-tab-item>
                 <v-tab-item>
                   <div v-if="sitesIntervals.length > 0">
                     <timeline-site-chart :chartSeries="sitesIntervals" :key="sitesIntervals" />
                   </div>
-                  <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes today 🏆</v-card-subtitle>
+                  <v-card-subtitle v-else>You didn't visit any watch sites for more than 5 minutes 🏆</v-card-subtitle>
                 </v-tab-item>
               </v-tabs>
             </v-card>
@@ -247,7 +247,6 @@ export default {
     //console.log(this.sitesIntervals);
     this.sitesIntervals = this.chartDataProcessor.watchSitesWeekTimeline([start, end], null, true);
     this.sitesIntervalsCombined = this.chartDataProcessor.watchSitesWeekTimeline([start, end]);
-    // console.log(this.sitesIntervals);
 
     this.sitesVisitsScatter = this.chartDataProcessor.weekSiteVisitScatter(null, null, true);
     this.heatmapData = this.chartDataProcessor.weekSiteVisitHeatMap(null, null, true);

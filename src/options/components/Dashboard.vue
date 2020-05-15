@@ -48,7 +48,7 @@
                 <v-card-text class="font-weight-bold display-1" :key="weekTotalUsage">
                   {{ weekTotalUsage }}
                 </v-card-text>
-                <v-card-text>
+                <v-card-text v-if="lastWeekTotalUsageCmp != -1">
                   <p class="font-weight-medium subtitle-1" :style="{ color: lastWeekTotalUsageCmpColor }">{{ lastWeekTotalUsageCmp }}</p>
                 </v-card-text>
               </div>
@@ -171,7 +171,7 @@ export default {
     chartDataProcessor: new ChartData(),
     loaded: false,
     weekTotalUsage: '',
-    lastWeekTotalUsageCmp: 0,
+    lastWeekTotalUsageCmp: -1,
     lastWeekTotalUsageCmpColor: colors.red.lighten1, // true = usage increased compared to last week
     search: '',
     tableDate: moment().format('YYYY-MM-DD'),
@@ -222,14 +222,16 @@ export default {
     const weekTotalMinutes = this.chartDataProcessor.timeFrameTotalTime(-7, 0);
     this.weekTotalUsage = `${Math.floor(weekTotalMinutes / 60)} Hours ${weekTotalMinutes % 60} Mins`;
     var lastWeekTotalMinutes = this.chartDataProcessor.timeFrameTotalTime(-13, -7);
-    if (weekTotalMinutes > lastWeekTotalMinutes)
-      this.lastWeekTotalUsageCmp = `+${Math.round((weekTotalMinutes / lastWeekTotalMinutes - 1) * 100)} % from last ${this.weekTotalSelect} days`;
-    else
-      (this.lastWeekTotalUsageCmpColor = colors.green.lighten1),
-        (this.lastWeekTotalUsageCmp = `-${Math.round((weekTotalMinutes / lastWeekTotalMinutes) * 100)} % from last ${this.weekTotalSelect} days`);
+    if (lastWeekTotalMinutes > 0) {
+      if (weekTotalMinutes > lastWeekTotalMinutes)
+        this.lastWeekTotalUsageCmp = `+${Math.round((weekTotalMinutes / lastWeekTotalMinutes - 1) * 100)} % from last ${this.weekTotalSelect} days`;
+      else
+        (this.lastWeekTotalUsageCmpColor = colors.green.lighten1),
+          (this.lastWeekTotalUsageCmp = `-${Math.round((weekTotalMinutes / lastWeekTotalMinutes) * 100)} % from last ${this.weekTotalSelect} days`);
+    }
 
     this.weekChartData.halfDonut = this.chartDataProcessor.weekChartHalfDonutData(-3, 0);
-    this.weekChartData.stackedBar = this.chartDataProcessor.siteUsageStackedBarData(-3, 0);
+    this.weekChartData.stackedBar = this.chartDataProcessor.siteUsageStackedBarData(0, 3);
     this.weekChartData.usageFrequencyTable = this.chartDataProcessor.weekSitesUsageFrequency();
 
     this.weekChartData.totalLine = this.chartDataProcessor.watchSitesTotalLineChart(null, 3, false, this.lineIsMonth);

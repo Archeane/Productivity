@@ -7,9 +7,9 @@
         <v-btn :value="true" text>month</v-btn>
       </v-btn-toggle>
       <span class="subtitle-2 ml-auto mr-3">
-        Have you find this tool useful? Please make a donation! <br />
-        Any amount is appreciated 😁</span
-      >
+        Have you find this tool useful? Please make a donation!
+        <br />Any amount is appreciated 😁
+      </span>
       <div>
         <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
           <input type="hidden" name="cmd" value="_donations" />
@@ -32,7 +32,7 @@
     <v-btn-toggle color="primary" v-model="isMonth" dense rounded mandatory style="margin-left:auto;">
       <v-btn :value="false" text>week</v-btn>
       <v-btn :value="true" text>month</v-btn>
-    </v-btn-toggle> -->
+    </v-btn-toggle>-->
     <v-col cols="12" style="max-height: 33vh;">
       <v-row>
         <v-col cols="3">
@@ -60,7 +60,7 @@
                   <v-list-item-content>
                     <div class="overline mb-4">{{ usage.url }}</div>
                     <v-list-item-title class="headline mb-1">{{ usage.total }}</v-list-item-title>
-                    <div v-html="renderChange(usage.change[0])"></div>
+                    <div v-if="usage.change" v-html="renderChange(usage.change[0])"></div>
                   </v-list-item-content>
                 </v-list-item>
                 <!-- <h3 class="display-1 font-weight-bold ml-5 pl-3 mt-2">#{{index+1}}</h3> -->
@@ -78,9 +78,14 @@
           <v-card height="52vh">
             <v-card-title class="pb-2 pt-2">Watch Sites Total Time</v-card-title>
             <v-divider></v-divider>
-            <div class="chart-container" style="position: relative; width: 90%;">
+            <div v-if="loaded && weekRadar" class="chart-container" style="position: relative; width: 90%;">
               <p class="caption pl-2">If your area is getting smaller, it means you're reducing time on watch sites!</p>
-              <radar-chart v-if="loaded" :chartdata="weekRadar" :key="weekRadar" style="max-height: 45vh;" />
+              <radar-chart :chartdata="weekRadar" :key="weekRadar" style="max-height: 45vh;" />
+            </div>
+            <div v-else style="text-align: center; padding: 15px">
+              <h2>
+                Have at least 3 watch sites to use this feature!
+              </h2>
             </div>
           </v-card>
         </v-col>
@@ -169,16 +174,19 @@ export default {
           total: this.minutesToHours(site[1]),
           favicon: this.getFavIconUrl(site[0]),
           change: lastWeekTopSites
-            .filter(value => {
-              return value[0] == site[0];
-            })
-            .map(value => {
-              return Math.floor(((site[1] - value[1]) / value[1]) * 100);
-            }),
+            ? lastWeekTopSites
+                .filter(value => {
+                  return value[0] == site[0];
+                })
+                .map(value => {
+                  return Math.floor(((site[1] - value[1]) / value[1]) * 100);
+                })
+            : null,
         })
       );
 
-      this.weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3, null, this.isMonth);
+      var weekRadar = this.chartDataProcessor.nWeeksWatchSitesChartRadar(3, null, this.isMonth);
+      if (weekRadar && 'labels' in weekRadar && weekRadar.labels.length > 2) this.weekRadar = weekRadar;
 
       this.weekSitesLine = this.chartDataProcessor.weekWatchSitesLineChart(null, this.isMonth);
 

@@ -28,10 +28,13 @@
           <div v-if="pieContainsData" class="chart-container">
             <pie-chart :chartSeries="pieSeries" :chartLabels="pieLabels" />
           </div>
-          <h2 v-else>
-            Sorry, not enough data for today yet <br />
-            check back later!<br />
-          </h2>
+          <div v-else style="text-align: center; padding: 15px">
+            <h2>
+              Sorry, not enough data for today yet
+              <br />check back later!
+              <br />
+            </h2>
+          </div>
           <div>
             <v-simple-table dense>
               <thead>
@@ -48,19 +51,25 @@
                   <td>{{ item.frequency }}</td>
                 </tr>
               </tbody>
-              <h2 v-else>
-                Sorry, not enough data for today yet <br />
-                check back later!<br />
-              </h2>
+              <div v-else style="text-align: center; padding: 15px">
+                <h2>
+                  Sorry, not enough data for today yet
+                  <br />check back later!
+                  <br />
+                </h2>
+              </div>
             </v-simple-table>
           </div>
         </v-tab-item>
         <v-tab-item>
           <timeline-chart v-if="timelineContainsData" :data="timelineData" width="500" height="450" style="margin-left: -2rem;" />
-          <h2 v-else>
-            Sorry, not enough data for today yet <br />
-            check back later!<br />
-          </h2>
+          <div v-else style="text-align: center; padding: 15px">
+            <h2>
+              Sorry, not enough data for today yet
+              <br />check back later!
+              <br />
+            </h2>
+          </div>
         </v-tab-item>
         <v-tab-item>
           <div v-if="containWatchSites">
@@ -69,10 +78,11 @@
               <span style="font-size: 26px; font-weight: 600; margin-left: 90px;">{{ minutesToHours(watchSitesTotalTime) }}</span>
             </div>
           </div>
-          <div v-else class="ml-5">
+          <div v-else style="text-align: center; padding: 15px">
             <h2>
-              Not enough data for this feature! <br />Either you haven't added any watch sites (click the [+ Watch Sites button], or go to options), <br />
-              or you haven't visited any watch sites today for longer than 5 minutes yet!
+              Sorry, not enough data for today yet
+              <br />check back later!
+              <br />
             </h2>
           </div>
           <stacked-bar-chart v-if="loaded" :chartdata="stackedBarData" style="padding-top: 5px;" />
@@ -127,12 +137,24 @@ export default {
     this.currentTab = await getCurrentTab();
 
     var pieData = this.chartData.dayChartPieData();
-    if (pieData == null || !('series' in pieData) || !('labels' in pieData) || pieData.series.length == 0 || pieData.series.length == 0) this.pieContainsData = false;
+
+    if (
+      pieData == null ||
+      !('series' in pieData) ||
+      !('labels' in pieData) ||
+      pieData.series.length == 0 ||
+      pieData.series.length == 0 ||
+      pieData.series.reduce((a, b) => {
+        return a + b;
+      }) < 1
+    )
+      this.pieContainsData = false;
     else {
       this.pieSeries = pieData.series;
       this.pieLabels = pieData.labels;
       this.pieContainsData = true;
     }
+
     var tableData = this.chartData.dayUsageTable();
     if (tableData != null) (this.tableData = tableData), (this.tableContainsData = true);
 
