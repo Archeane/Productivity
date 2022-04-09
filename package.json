@@ -18,7 +18,7 @@
     "chart.js": "^2.9.3",
     "chartjs-plugin-datalabels": "^0.7.0",
     "jquery": "^3.4.1",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "sass-loader": "^7.3.1",
     "timelines-chart": "git+https://git@github.com/Archeane/timelines-chart.git",
     "vue": "^2.6.10",
